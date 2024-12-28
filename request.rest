@@ -1,0 +1,30 @@
+###
+//get me the home page
+GET http://localhost:3000/about
+
+###
+//get me all the posts
+GET http://localhost:3000/posts 
+
+###
+//get me the post that YotamGat wrote
+GET http://localhost:3000/posts?owner=YotamGat11
+
+###
+//get me the post with id 
+GET http://localhost:3000/posts/6759875c0e7bac250ac73fd4
+
+###
+//post me a new post (stored in DB)
+POST http://localhost:3000/posts
+Content-Type: application/json
+
+{
+  "owner": "Nitzannnnnn",
+  "title": "My first post",
+  "content": "This is my first post"
+}
+
+###
+//delete post by id number
+DELETE http://localhost:3000/posts/6759875c0e7bac250ac73fd4
