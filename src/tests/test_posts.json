@@ -1,12 +1,12 @@
 [
-    {
-        "title": "Test Post",
-        "owner": "Test Owner",
-        "content": "Test Content"
-    },
-    {
-        "title": "Test Post 2",
-        "owner": "Test Owner 2",
-        "content": "Test Content 2"
-    }
+  {
+    "title": "Test Post",
+    "owner": "Test Owner",
+    "content": "Test Content"
+  },
+  {
+    "title": "Test Post 2",
+    "owner": "Test Owner 2",
+    "content": "Test Content 2"
+  }
 ]
