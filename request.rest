@@ -12,7 +12,7 @@ GET http://localhost:3000/posts?owner=YotamGat11
 
 ###
 //get me the post with id 
-GET http://localhost:3000/posts/6759875c0e7bac250ac73fd4
+GET http://localhost:3000/posts/676ff23af9aa21c289eba265
 
 ###
 //post me a new post (stored in DB)
@@ -20,7 +20,7 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-  "owner": "Nitzannnnnn",
+  "owner": "YotamGat11",
   "title": "My first post",
   "content": "This is my first post"
 }

@@ -1,36 +1,4 @@
 "use strict";
-/*
-import express from "express";
-const app = express();
-import dotenv from "dotenv";
-dotenv.config();
-const bodyParser = require("body-parser");
-import mongoose from "mongoose";
-//const { set } = require("mongoose");
-const postsRoutes = require("../routes/posts_routes");
-
-const db = mongoose.connection;
-db.on("error", (error) => console.error(error));
-db.once("open", () => console.log("Connected to Database"));
-
-// body parser will help us to take the data from the user
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.use("/posts", postsRoutes);
-
-app.get("/about", (req, res) => {
-  res.send("Hello World!!!!!!!!");
-});
-
-const initApp = () => {
-  return new Promise(async (resolve, reject) => {
-    await mongoose.connect(process.env.DB_CONNECTION);
-    resolve(app);
-  });
-};
-
-export default initApp;*/
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -49,10 +17,9 @@ const app = (0, express_1.default)();
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const mongoose_1 = __importDefault(require("mongoose"));
-const body_parser_1 = __importDefault(require("body-parser"));
 const posts_routes_1 = __importDefault(require("./routes/posts_routes"));
-//const { set } = require("mongoose");
-//const postsRoutes = require("../routes/posts_routes");
+const comments_routes_1 = __importDefault(require("./routes/comments_routes"));
+const body_parser_1 = __importDefault(require("body-parser"));
 const initApp = () => __awaiter(void 0, void 0, void 0, function* () {
     return new Promise((resolve, reject) => {
         const db = mongoose_1.default.connection;
@@ -72,6 +39,7 @@ const initApp = () => __awaiter(void 0, void 0, void 0, function* () {
                 app.use(body_parser_1.default.json());
                 app.use(body_parser_1.default.urlencoded({ extended: true }));
                 app.use("/posts", posts_routes_1.default);
+                app.use("/comments", comments_routes_1.default);
                 app.get("/about", (req, res) => {
                     res.send("About Page");
                 });

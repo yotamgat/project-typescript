@@ -1,5 +1,5 @@
 import request from "supertest"; // to test HTTP requests/responses
-import appInit from "../server"; // Link to your server file
+import initApp from "../server"; // Link to your server file
 import mongoose from "mongoose";
 import postModel from "../models/posts_model";
 //const { getPostById } = require('../controllers/posts_controller');
@@ -20,7 +20,7 @@ let app: Express;
 
 // runs before all tests
 beforeAll(async () => {
-  app = await appInit();
+  app = await initApp();
   console.log("before all tests");
   await postModel.deleteMany();
 });
