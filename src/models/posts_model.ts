@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
-const Schema = mongoose.Schema;
+//const Schema = mongoose.Schema;
 
-export interface iPost {
+export interface IPost {
   title: string;
   content: string;
   owner: string;
 }
 
-const postSchema = new Schema<iPost>({
+const postSchema = new mongoose.Schema<IPost>({
   title: {
     type: String,
     required: true,
@@ -19,5 +19,5 @@ const postSchema = new Schema<iPost>({
   },
 });
 
-const postModel = mongoose.model<iPost>("Posts", postSchema);
+const postModel = mongoose.model<IPost>("Posts", postSchema);
 export default postModel;

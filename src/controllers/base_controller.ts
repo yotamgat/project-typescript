@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { Model } from "mongoose";
+import { AnyExpression, Model } from "mongoose";
 
 class BaseController<T> {
   model: Model<T>;
-  constructor(model: Model<T>) {
+  constructor(model: any) {
     this.model = model;
   }
 
@@ -11,11 +11,11 @@ class BaseController<T> {
     const ownerFilter = req.query.owner;
     try {
       if (ownerFilter) {
-        const posts = await this.model.find({ owner: ownerFilter });
-        res.status(200).send(posts);
+        const item = await this.model.find({ owner: ownerFilter });
+        res.send(item);
       } else {
-        const posts = await this.model.find();
-        res.status(200).send(posts);
+        const items = await this.model.find();
+        res.send(items);
       }
     } catch (err) {
       res.status(400).send(err);
@@ -23,42 +23,39 @@ class BaseController<T> {
   }
 
   async getById(req: Request, res: Response) {
-    const postId = req.params.id;
+    const id = req.params.id;
     try {
-      const post = await this.model.findById(postId);
-      if (post === null) {
-        return res.status(404).send("Post not found");
+      const item = await this.model.findById(id);
+      if (item != null) {
+        res.send(item);
       } else {
-        return res.status(200).send(post);
+         res.status(404).send("Not found");
       }
-      res.status(200).send(post);
     } catch (err) {
       res.status(400).send(err);
     }
   }
 
   async create(req: Request, res: Response) {
-    const post = req.body;
+    const body = req.body;
     try {
-      const newPost = await this.model.create(post);
-      res.status(201).send(newPost);
+      const item = await this.model.create(body);
+      res.status(201).send(item);
     } catch (err) {
       res.status(400).send(err);
     }
   }
 
-  async deleteById(req: Request, res: Response) {
-    const postId = req.params.id;
+  async deleteItem(req: Request, res: Response) {
+    const id = req.params.id;
     try {
-      await this.model.findByIdAndDelete(postId);
-      res.status(200).send();
-    } catch (err) {
-      res.status(400).send(err);
+      const rs= await this.model.findByIdAndDelete(id);
+      res.status(200).send(rs);
+    } catch (error) {
+      res.status(400).send(error);
     }
   }
 }
-const createController = <T>(model: Model<T>) => {
-  return new BaseController(model);
-};
 
-export default createController;
+
+export default BaseController;
