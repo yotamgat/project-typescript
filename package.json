@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "nodemon ./src/app.ts",
     "start": "tsc && node ./dist/app.js",
-    "test": "jest --detectOpenHandles --forceExit --runInBand",
-    "testAuth": "jest --detectOpenHandles --forceExit auth.test.ts",
-    "testPost": "jest --detectOpenHandles --forceExit posts.test.ts",
+    "test": "tsc && jest --detectOpenHandles --forceExit --runInBand",
+    "testAuth": "tsc && jest --detectOpenHandles --forceExit auth.test.ts --runInBand",
+    "testPost": "tsc && jest --detectOpenHandles --forceExit posts.test.ts",
     "lint": "eslint . --ext .ts"
   },
   "author": "Yotam Gat",

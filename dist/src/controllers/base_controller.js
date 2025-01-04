@@ -18,12 +18,12 @@ class BaseController {
             const ownerFilter = req.query.owner;
             try {
                 if (ownerFilter) {
-                    const posts = yield this.model.find({ owner: ownerFilter });
-                    res.status(200).send(posts);
+                    const item = yield this.model.find({ owner: ownerFilter });
+                    res.send(item);
                 }
                 else {
-                    const posts = yield this.model.find();
-                    res.status(200).send(posts);
+                    const items = yield this.model.find();
+                    res.send(items);
                 }
             }
             catch (err) {
@@ -33,16 +33,15 @@ class BaseController {
     }
     getById(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const postId = req.params.id;
+            const id = req.params.id;
             try {
-                const post = yield this.model.findById(postId);
-                if (post === null) {
-                    return res.status(404).send("Post not found");
+                const item = yield this.model.findById(id);
+                if (item != null) {
+                    res.send(item);
                 }
                 else {
-                    return res.status(200).send(post);
+                    res.status(404).send("Not found");
                 }
-                res.status(200).send(post);
             }
             catch (err) {
                 res.status(400).send(err);
@@ -51,31 +50,28 @@ class BaseController {
     }
     create(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const post = req.body;
+            const body = req.body;
             try {
-                const newPost = yield this.model.create(post);
-                res.status(201).send(newPost);
+                const item = yield this.model.create(body);
+                res.status(201).send(item);
             }
             catch (err) {
                 res.status(400).send(err);
             }
         });
     }
-    deleteById(req, res) {
+    deleteItem(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const postId = req.params.id;
+            const id = req.params.id;
             try {
-                yield this.model.findByIdAndDelete(postId);
-                res.status(200).send();
+                const rs = yield this.model.findByIdAndDelete(id);
+                res.status(200).send(rs);
             }
-            catch (err) {
-                res.status(400).send(err);
+            catch (error) {
+                res.status(400).send(error);
             }
         });
     }
 }
-const createController = (model) => {
-    return new BaseController(model);
-};
-exports.default = createController;
+exports.default = BaseController;
 //# sourceMappingURL=base_controller.js.map

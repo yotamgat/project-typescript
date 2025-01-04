@@ -6,6 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const comments_model_1 = __importDefault(require("../models/comments_model"));
 //import { Request, Response } from "express";
 const base_controller_1 = __importDefault(require("./base_controller"));
-const commentsController = (0, base_controller_1.default)(comments_model_1.default);
+const commentsController = new base_controller_1.default(comments_model_1.default);
 exports.default = commentsController;
 //# sourceMappingURL=comment_controller.js.map

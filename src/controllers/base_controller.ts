@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AnyExpression, Model } from "mongoose";
+import {  Model } from "mongoose";
 
 class BaseController<T> {
   model: Model<T>;
