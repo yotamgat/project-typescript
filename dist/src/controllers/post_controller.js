@@ -23,13 +23,12 @@ class PostController extends base_controller_1.default {
             create: { get: () => super.create }
         });
         return __awaiter(this, void 0, void 0, function* () {
-            const userId = req.params.userId;
-            const post = Object.assign(Object.assign({}, req.body), { owner: userId });
+            const _id = req.params.userId;
+            const post = Object.assign(Object.assign({}, req.body), { owner: _id });
             req.body = post;
             _super.create.call(this, req, res);
         });
     }
-    ;
 }
 exports.default = new PostController();
 //# sourceMappingURL=post_controller.js.map

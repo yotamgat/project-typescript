@@ -204,7 +204,85 @@ describe("Auth Test", () => {
       owner: "sdfSd",
     });
     expect(response4.statusCode).toBe(201);
-
-
   });
+
+  //---------New Login Tests--------------
+  test("Login with missing email", async () => {
+    const response = await request(app).post("/auth/login").send({ password: "testpassword" });
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Login with missing password", async () => {
+    const response = await request(app).post("/auth/login").send({ email: "test@user.com" });
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Login with invalid email", async () => {
+    const response = await request(app).post("/auth/login").send({ email: "invalid@user.com", password: "testpassword" });
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Login with invalid password", async () => {
+    const response = await request(app).post("/auth/login").send({ email: "test@user.com", password: "invalidpassword" });
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Login with valid email and password", async () => {
+    const response = await request(app).post("/auth/login").send(testUser);
+    expect(response.statusCode).toBe(200);
+    expect(response.body.accessToken).toBeDefined();
+    testUser.accessToken = response.body.accessToken;
+    testUser.refreshToken = response.body.refreshToken;
+  });
+
+  //---------New Logout Tests--------------
+  test("Logout with missing refresh token", async () => {
+    const response = await request(app).post("/auth/logout").send({});
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Logout with invalid refresh token", async () => {
+    const response = await request(app).post("/auth/logout").send({ refreshToken: "invalidtoken" });
+    expect(response.statusCode).toBe(403);
+  });
+
+  test("Logout with valid refresh token", async () => {
+    const response = await request(app).post("/auth/logout").send({ refreshToken: testUser.refreshToken });
+    expect(response.statusCode).toBe(200);
+  });
+  //---------New Register Tests--------------
+  test("Register with missing email", async () => {
+    const response = await request(app).post("/auth/register").send({ password: "testpassword" });
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Register with missing password", async () => {
+    const response = await request(app).post("/auth/register").send({ email: "test@user.com" });
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Register with valid email and password", async () => {
+    const response = await request(app).post("/auth/register").send(testUser);
+    expect(response.statusCode).not.toBe(200);
+  });
+
+  //---------New Refresh Tokens Tests--------------
+  test("Refresh with missing refresh token", async () => {
+    const response = await request(app).post("/auth/refresh").send({});
+    expect(response.statusCode).toBe(400);
+  });
+
+  test("Refresh with invalid refresh token", async () => {
+    const response = await request(app).post("/auth/refresh").send({ refreshToken: "invalidtoken" });
+    expect(response.statusCode).toBe(403);
+  });
+
+  test("Refresh with valid refresh token", async () => {
+    const loginResponse = await request(app).post("/auth/login").send(testUser);
+    const response = await request(app).post("/auth/refresh").send({ refreshToken: loginResponse.body.refreshToken });
+    expect(response.statusCode).toBe(200);
+    expect(response.body.accessToken).toBeDefined();
+  });
+
+
 });

@@ -7,15 +7,14 @@ class PostController extends BaseController<IPost> {
     super(postModel);
   }
   async create(req: Request, res: Response) {
-      const userId = req.params.userId;
+      const _id = req.params.userId;
       const post ={
         ...req.body,
-        owner: userId
-      }
+        owner: _id
+      };
       req.body = post;
       super.create(req, res); 
-    };
-    
+  } 
 }
 
 export default new PostController();

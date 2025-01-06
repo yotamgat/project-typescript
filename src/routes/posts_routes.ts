@@ -40,9 +40,10 @@ const router = express.Router();
 *       500:
 *         description: Internal server error
 */
-router.get("/",(req:Request,res:Response)=>{
-    postController.getAll(req,res);
-});
+router.get("/", postController.getAll.bind(postController));
+//router.get("/",(req:Request,res:Response)=>{
+//    postController.getAll(req,res);
+//});
 
 /**
 * @swagger
@@ -79,9 +80,10 @@ router.get("/",(req:Request,res:Response)=>{
 *       500:
 *         description: Internal server error
 */
-router.get("/:id",(req:Request,res:Response)=>{
-    postController.getById(req,res);
-});
+router.get("/:id", postController.getById.bind(postController));
+//router.get("/:id",(req:Request,res:Response)=>{
+//    postController.getById(req,res);
+//});
 
 /**
 * @swagger
@@ -133,9 +135,10 @@ router.get("/:id",(req:Request,res:Response)=>{
 *                    example: "60f3b4b3b3b3b3b3b3b3b3"
 *             
 */
-router.post("/",authMiddleware,(req:Request,res:Response)=>{
-    postController.create(req,res);
-});
+router.post("/", authMiddleware ,postController.create.bind(postController));
+//router.post("/",authMiddleware,(req:Request,res:Response)=>{
+//    postController.create(req,res);
+//});
 
 /**
 * @swagger
@@ -161,14 +164,12 @@ router.post("/",authMiddleware,(req:Request,res:Response)=>{
 *       500:
 *         description: Internal server error
 */
+router.delete("/:id", authMiddleware ,postController.deleteItem.bind(postController));
+//router.delete("/:id",authMiddleware,(req:Request,res:Response)=>{
+//    postController.deleteItem(req,res);
+//});
 
-router.delete("/:id",authMiddleware,(req:Request,res:Response)=>{
-    postController.deleteItem(req,res);
-});
 
-//router.get("/", postController.getAll.bind(postController));
-//router.get("/:id", postController.getById.bind(postController));
-//router.post("/", authMiddleware ,postController.create.bind(postController));
-//router.delete("/:id", authMiddleware ,postController.deleteItem.bind(postController)); //delete the post with specific id
+
 
 export default router;

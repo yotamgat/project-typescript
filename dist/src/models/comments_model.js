@@ -9,11 +9,11 @@ const commentSchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
-    postId: {
+    owner: {
         type: String,
         required: true,
     },
-    owner: {
+    postId: {
         type: String,
         required: true,
     },

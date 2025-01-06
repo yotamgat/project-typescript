@@ -93,6 +93,7 @@ router.post("/register", authController.register);
 *                      description: JWT refresh token
 *                      example: "wODh9.U4CC82ffH7JuL2xJyMnPfmRPmWBL77bCTv8JYxL7YmI"
 *                   _id:
+* 
 *                      type: string
 *                      description: User ID
 *                      example: "67791ff7fb2b2485819ebb66"
