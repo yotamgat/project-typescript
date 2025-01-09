@@ -6,6 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_controller_1 = __importDefault(require("../controllers/auth_controller"));
 const router = express_1.default.Router();
+router.post("/register", auth_controller_1.default.register);
+router.post("/login", auth_controller_1.default.login);
+router.post("/logout", auth_controller_1.default.logout);
+router.post("/refresh", auth_controller_1.default.refresh);
 /**
  * @swagger
  * tags:
@@ -61,7 +65,6 @@ const router = express_1.default.Router();
 *           schema:
 *             $ref: '#/components/schemas/User'
 */
-router.post("/register", auth_controller_1.default.register);
 /**
 * @swagger
 * /auth/login:
@@ -91,6 +94,7 @@ router.post("/register", auth_controller_1.default.register);
 *                      description: JWT refresh token
 *                      example: "wODh9.U4CC82ffH7JuL2xJyMnPfmRPmWBL77bCTv8JYxL7YmI"
 *                   _id:
+*
 *                      type: string
 *                      description: User ID
 *                      example: "67791ff7fb2b2485819ebb66"
@@ -99,8 +103,5 @@ router.post("/register", auth_controller_1.default.register);
 *       '500':
 *         description: Server error
 */
-router.post("/login", auth_controller_1.default.login);
-router.post("/logout", auth_controller_1.default.logout);
-router.post("/refresh", auth_controller_1.default.refresh);
 exports.default = router;
 //# sourceMappingURL=auth_routes.js.map

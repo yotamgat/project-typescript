@@ -7,10 +7,15 @@ const express_1 = __importDefault(require("express"));
 const post_controller_1 = __importDefault(require("../controllers/post_controller"));
 const auth_controller_1 = require("../controllers/auth_controller");
 const router = express_1.default.Router();
+router.get("/", post_controller_1.default.getAll.bind(post_controller_1.default));
+router.get("/:id", post_controller_1.default.getById.bind(post_controller_1.default));
+router.post("/", auth_controller_1.authMiddleware, post_controller_1.default.createItem.bind(post_controller_1.default));
+router.delete("/:id", auth_controller_1.authMiddleware, post_controller_1.default.deleteItem.bind(post_controller_1.default));
+router.put("/:id", auth_controller_1.authMiddleware, post_controller_1.default.updateItem.bind(post_controller_1.default));
 /**
  * @swagger
  * tags:
- *  name: Psts
+ *  name: Posts
  *  description: The Posts API
  */
 /**
@@ -41,10 +46,6 @@ const router = express_1.default.Router();
 *       500:
 *         description: Internal server error
 */
-router.get("/", post_controller_1.default.getAll.bind(post_controller_1.default));
-//router.get("/",(req:Request,res:Response)=>{
-//    postController.getAll(req,res);
-//});
 /**
 * @swagger
 * /posts/{id}:
@@ -80,10 +81,6 @@ router.get("/", post_controller_1.default.getAll.bind(post_controller_1.default)
 *       500:
 *         description: Internal server error
 */
-router.get("/:id", post_controller_1.default.getById.bind(post_controller_1.default));
-//router.get("/:id",(req:Request,res:Response)=>{
-//    postController.getById(req,res);
-//});
 /**
 * @swagger
 * /posts:
@@ -134,10 +131,6 @@ router.get("/:id", post_controller_1.default.getById.bind(post_controller_1.defa
 *                    example: "60f3b4b3b3b3b3b3b3b3b3"
 *
 */
-router.post("/", auth_controller_1.authMiddleware, post_controller_1.default.create.bind(post_controller_1.default));
-//router.post("/",authMiddleware,(req:Request,res:Response)=>{
-//    postController.create(req,res);
-//});
 /**
 * @swagger
 * /posts/{id}:
@@ -162,9 +155,61 @@ router.post("/", auth_controller_1.authMiddleware, post_controller_1.default.cre
 *       500:
 *         description: Internal server error
 */
-router.delete("/:id", auth_controller_1.authMiddleware, post_controller_1.default.deleteItem.bind(post_controller_1.default));
-//router.delete("/:id",authMiddleware,(req:Request,res:Response)=>{
-//    postController.deleteItem(req,res);
-//});
+/**
+* @swagger
+* /posts/{id}:
+*  put:
+*     summary: Update a post by ID
+*     tags: [Posts]
+*     security:
+*       - bearerAuth: []
+*     parameters:
+*       - in: path
+*         name: id
+*         required: true
+*         description: The ID of the post to update
+*         schema:
+*           type: string
+*           example: "60f3b4b3b3b3b3b3b3b3b3b3"
+*     requestBody:
+*       required: true
+*       content:
+*         application/json:
+*           schema:
+*             type: object
+*             properties:
+*               title:
+*                 type: string
+*                 description: The Post Title
+*                 example: "Updated Post Title"
+*               content:
+*                 type: string
+*                 description: The Post Content
+*                 example: "Updated Post Content"
+*     responses:
+*       200:
+*         description: Post successfully updated
+*         content:
+*           application/json:
+*              schema:
+*                type: object
+*                properties:
+*                  title:
+*                    type: string
+*                    description: The Post Title
+*                  content:
+*                    type: string
+*                    description: The Post Content
+*                  owner:
+*                    type: string
+*                    description: The Post Owner
+*                  _id:
+*                    type: string
+*                    description: The Post ID
+*       404:
+*          description: Post not found
+*       500:
+*          description: Internal server error
+ */
 exports.default = router;
 //# sourceMappingURL=posts_routes.js.map

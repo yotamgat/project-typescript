@@ -191,6 +191,7 @@ const refresh = async (req: Request, res: Response) => {
 
 type TokenPayload = {
     _id: string
+    
 };
 //Middleware to authenticate the user with token
 export const authMiddleware = (req: Request, res: Response, next:NextFunction) => {
@@ -210,11 +211,13 @@ export const authMiddleware = (req: Request, res: Response, next:NextFunction) =
     // verify the token with the secret key
     jwt.verify(token, process.env.TOKEN_SECRET,(err,data)=>{
         if(err) {
-            res.status(403).send('Invalud Token');
+            res.status(403).send('Invalid Token');
             return;
         }
         const payload = data as TokenPayload;
-        req.params.userId = payload._id;
+        
+        req.params.userId = payload._id; // set the user id in the request object
+        
         next();
     }); 
     

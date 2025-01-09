@@ -7,7 +7,7 @@ import userModel, { IUser } from "../models/users_model";
 
 var app: Express;
 
-type User = IUser & { accessToken?: string };
+type User = IUser & { accessToken?: string, _id?: string };
 const testUser: User = {
   email: "test@user.com",
   password: "testpassword",

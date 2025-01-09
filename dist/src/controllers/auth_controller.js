@@ -206,11 +206,11 @@ const authMiddleware = (req, res, next) => {
     // verify the token with the secret key
     jsonwebtoken_1.default.verify(token, process.env.TOKEN_SECRET, (err, data) => {
         if (err) {
-            res.status(403).send('Invalud Token');
+            res.status(403).send('Invalid Token');
             return;
         }
         const payload = data;
-        req.params.userId = payload._id;
+        req.params.userId = payload._id; // set the user id in the request object
         next();
     });
 };

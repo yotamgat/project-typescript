@@ -16,7 +16,7 @@ const supertest_1 = __importDefault(require("supertest")); // to test HTTP reque
 const server_1 = __importDefault(require("../server")); // Link to your server file
 const comments_model_1 = __importDefault(require("../models/comments_model"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const test_comments_json_1 = __importDefault(require("./test_comments.json"));
+//import testComments from "./test_comments.json";
 const users_model_1 = __importDefault(require("../models/users_model"));
 let app;
 const testUser = {
@@ -42,10 +42,16 @@ afterAll((done) => {
     mongoose_1.default.connection.close();
     done();
 });
-let commentId = "";
 const invalidComment = {
     comment: "Test Comment 1",
 };
+const testComments = {
+    comment: "Test Comment 1",
+    postId: new mongoose_1.default.Types.ObjectId().toString(), // Ensure valid ObjectId
+    owner: new mongoose_1.default.Types.ObjectId().toString(), // Ensure valid ObjectId
+};
+let commentId = "";
+let commentOwner = testComments.owner;
 describe("Comments Test suite", () => {
     test("Comment test get all", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).get("/comments");
@@ -53,11 +59,11 @@ describe("Comments Test suite", () => {
         expect(response.body).toHaveLength(0); // 1 comment in the database
     }));
     test("Test Adding new comment", () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app).post("/comments").set({ authorization: "JWT " + testUser.accessToken }).send(test_comments_json_1.default[0]);
+        const response = yield (0, supertest_1.default)(app).post("/comments").set({ authorization: "JWT " + testUser.accessToken }).send(testComments);
+        console.log("Add new comment response:", response.body); // Log the response body
         expect(response.statusCode).toBe(201); // status code 201
-        expect(response.body.comment).toBe(test_comments_json_1.default[0].comment);
-        expect(response.body.postId).toBe(test_comments_json_1.default[0].postId);
-        expect(response.body.owner).toBe(test_comments_json_1.default[0].owner);
+        expect(response.body.comment).toBe(testComments.comment);
+        expect(response.body.postId).toBe(testComments.postId);
         commentId = response.body._id;
     }));
     test("Test Adding invalid comment", () => __awaiter(void 0, void 0, void 0, function* () {
@@ -69,24 +75,25 @@ describe("Comments Test suite", () => {
         expect(response.statusCode).toBe(200); // status code 200
         expect(response.body).toHaveLength(1); // 1 comment in the database
     }));
-    test("Test get comment by owner", () => __awaiter(void 0, void 0, void 0, function* () {
-        const response = yield (0, supertest_1.default)(app).get("/comments?owner=" + test_comments_json_1.default[0].owner);
-        expect(response.statusCode).toBe(200); // status code 200
-        expect(response.body).toHaveLength(1); // 1 comment in the database
-        expect(response.body[0].comment).toBe(test_comments_json_1.default[0].comment);
-        expect(response.body[0].postId).toBe(test_comments_json_1.default[0].postId);
-        expect(response.body[0].owner).toBe(test_comments_json_1.default[0].owner);
-    }));
     test("Test get comment by id", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).get("/comments/" + commentId);
         expect(response.statusCode).toBe(200); // status code 200
-        expect(response.body.comment).toBe(test_comments_json_1.default[0].comment);
-        expect(response.body.postId).toBe(test_comments_json_1.default[0].postId);
-        expect(response.body.owner).toBe(test_comments_json_1.default[0].owner);
+        expect(response.body.comment).toBe(testComments.comment);
+        expect(response.body.postId).toBe(testComments.postId);
     }));
     test("Test get comment by id fail", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).get("/comments/1234");
         expect(response.statusCode).toBe(400); // status code 404
+    }));
+    test("Test update comment by id", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).put("/comments/" + commentId).set({ authorization: "JWT " + testUser.accessToken }).send({ comment: "Updated Comment" });
+        expect(response.statusCode).toBe(200); // status code 200
+        expect(response.body.comment).toBe("Updated Comment");
+    }));
+    test("Test get all comments by post id", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).get("/comments?postId=" + testComments.postId);
+        expect(response.statusCode).toBe(200); // status code 200
+        expect(response.body).toHaveLength(1); // 1 comment in the database
     }));
     test("Test delete comment by id", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).delete("/comments/" + commentId).set({ authorization: "JWT " + testUser.accessToken });

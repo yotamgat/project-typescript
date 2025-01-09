@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import {  Model } from "mongoose";
 
+
+
 class BaseController<T> {
   model: Model<T>;
-  constructor(model: any) {
+  constructor(model: Model<T>) {
     this.model = model;
   }
 
@@ -36,16 +38,6 @@ class BaseController<T> {
     }
   }
 
-  async create(req: Request, res: Response) {
-    const body = req.body;
-    try {
-      const item = await this.model.create(body);
-      res.status(201).send(item);
-    } catch (err) {
-      res.status(400).send(err);
-    }
-  }
-
   async deleteItem(req: Request, res: Response) {
     const id = req.params.id;
     try {
@@ -55,7 +47,28 @@ class BaseController<T> {
       res.status(400).send(error);
     }
   }
-}
 
+  async createItem(req: Request, res: Response) {
+    console.log(req.body);
+    const body = req.body;
+    try {
+      const item = await this.model.create(body);
+      res.status(201).send(item);
+    } catch (err) {
+      res.status(400).send(err);
+    }
+  };
+
+  async updateItem(req: Request, res: Response){
+    const id = req.params.id;
+    const body = req.body;
+    try {
+      const item = await this.model.findByIdAndUpdate(id, body, {new: true});
+      res.status(200).send(item);
+    } catch (err) {
+      res.status(400).send(err);
+    }
+  }
+}
 
 export default BaseController;

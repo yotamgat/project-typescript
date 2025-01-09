@@ -20,7 +20,7 @@ POST http://localhost:3000/posts
 Content-Type: application/json
 
 {
-  "owner": "YotamGat11",
+  "owner": "bob@gmail.com",
   "title": "My first post",
   "content": "This is my first post"
 }
@@ -28,3 +28,5 @@ Content-Type: application/json
 ###
 //delete post by id number
 DELETE http://localhost:3000/posts/6759875c0e7bac250ac73fd4
+
+

@@ -4,6 +4,11 @@ import authController from "../controllers/auth_controller";
 
 const router = express.Router();
 
+router.post("/register", authController.register);
+router.post("/login", authController.login);
+router.post("/logout", authController.logout);
+router.post("/refresh", authController.refresh);
+
 /**
  * @swagger
  * tags:
@@ -62,7 +67,7 @@ const router = express.Router();
 *           schema:
 *             $ref: '#/components/schemas/User'
 */
-router.post("/register", authController.register);
+
 
 /**
 * @swagger
@@ -102,9 +107,7 @@ router.post("/register", authController.register);
 *       '500':
 *         description: Server error
 */
-router.post("/login", authController.login);
-router.post("/logout", authController.logout);
-router.post("/refresh", authController.refresh);
+
 
 
 export default router;

@@ -6,14 +6,14 @@ class PostController extends BaseController<IPost> {
   constructor() {
     super(postModel);
   }
-  async create(req: Request, res: Response) {
-      const _id = req.params.userId;
+  async createItem(req: Request, res: Response) {
+      const userId = req.params.userId;
       const post ={
         ...req.body,
-        owner: _id
+        owner: userId
       };
       req.body = post;
-      super.create(req, res); 
+      super.createItem(req, res); 
   } 
 }
 

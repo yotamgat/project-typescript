@@ -1,19 +1,17 @@
-
 [
     {
-        "comment": "This is a comment",
-        "owner": "Eliav",
-        "postId": "safgsefdgsdfgsd"
+        "comment": "This is a comment1",
+        "owner": "60c72b2f9b1e8b432c4d8f68",
+        "postId": "60c72b2f9b1e8b432c4d8f66"
     },
     {
-        "comment": "This is another comment",
-        "owner": "Eliav",
-        "postId": "safgsefdgsdfgsd"
+        "comment": "This is another comment2",
+        "owner": "60c72b2f9b1e8b432c4d8f68",
+        "postId": "60c72b2f9b1e8b432c4d8f66"
     },
     {
-        "comment": "This is another comment",
-        "owner": "Eliav2",
-        "postId": "safgsefdgsdfgsd"
+        "comment": "This is another comment3",
+        "owner": "60c72b2f9b1e8b432c4d8f69",
+        "postId": "60c72b2f9b1e8b432c4d8f67"
     }
-
 ]

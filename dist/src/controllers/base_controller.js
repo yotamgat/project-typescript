@@ -48,8 +48,21 @@ class BaseController {
             }
         });
     }
-    create(req, res) {
+    deleteItem(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            const id = req.params.id;
+            try {
+                const rs = yield this.model.findByIdAndDelete(id);
+                res.status(200).send("Item Deleted");
+            }
+            catch (error) {
+                res.status(400).send(error);
+            }
+        });
+    }
+    createItem(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log(req.body);
             const body = req.body;
             try {
                 const item = yield this.model.create(body);
@@ -60,15 +73,17 @@ class BaseController {
             }
         });
     }
-    deleteItem(req, res) {
+    ;
+    updateItem(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const id = req.params.id;
+            const body = req.body;
             try {
-                const rs = yield this.model.findByIdAndDelete(id);
-                res.status(200).send("Item Deleted");
+                const item = yield this.model.findByIdAndUpdate(id, body, { new: true });
+                res.status(200).send(item);
             }
-            catch (error) {
-                res.status(400).send(error);
+            catch (err) {
+                res.status(400).send(err);
             }
         });
     }

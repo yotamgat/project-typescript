@@ -1,0 +1,35 @@
+[33mcommit b22eff8069485786193b34d931af851dae4a8dbf[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: Yotam Gat <yotamgat2@gmail.com>
+Date:   Sat Jan 4 20:05:59 2025 +0200
+
+    Add swagger doc
+
+[33mcommit d1dc9d0f7f8189657264323c35f1c8fd6d1dc841[m
+Author: Yotam Gat <yotamgat2@gmail.com>
+Date:   Sat Jan 4 14:18:01 2025 +0200
+
+    Refresh tokens test
+
+[33mcommit 7c2ed30266e04da023b5f0aa33100c02c2958987[m
+Author: Yotam Gat <yotamgat2@gmail.com>
+Date:   Thu Jan 2 05:16:41 2025 +0200
+
+    auth routes, controller, test
+
+[33mcommit 88e7b062cda14a3c69d74249c881a1982330fc4e[m
+Author: Yotam Gat <yotamgat2@gmail.com>
+Date:   Wed Jan 1 21:44:03 2025 +0200
+
+    Comments routs, controller, model, test... and base controller
+
+[33mcommit 27b00397aad183586b6b438df2bac39c6285f9ba[m
+Author: Yotam Gat <yotamgat2@gmail.com>
+Date:   Sat Dec 28 15:47:07 2024 +0200
+
+    Also test convert to TypeScript
+
+[33mcommit 12d293d6e020aeafcaa05c476d9d716cdb10a6f1[m
+Author: Yotam Gat <yotamgat2@gmail.com>
+Date:   Sat Dec 28 14:47:41 2024 +0200
+
+    All project transeferd to TypeScript

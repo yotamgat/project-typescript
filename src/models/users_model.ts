@@ -1,16 +1,17 @@
-import mongoose from "mongoose";
+//import mongoose from "mongoose";
+import mongoose, { Schema, Document } from 'mongoose';
 //const Schema = mongoose.Schema;
 
 export interface IUser {
   email: string;
   password: string;
-  _id?: string;
+  userId?: string;
   refreshTokens?: string[];
   
 
 }
 
-const userSchema = new mongoose.Schema<IUser>({
+const userSchema: Schema = new Schema<IUser>({
   email: {
     type: String,
     required: true,
