@@ -1,9 +1,11 @@
+
 import request from "supertest"; // to test HTTP requests/responses
 import initApp from "../server"; // Link to your server file
 import mongoose from "mongoose";
-import { Express } from "express";
+import e, { Express } from "express";
 import userModel, { IUser} from "../models/users_model";
 import postModel from "../models/posts_model";
+import jwt from "jsonwebtoken";
 
 let app: Express;
 
@@ -37,6 +39,10 @@ const testUser: UserInfo = {
   email: "test@user.com",
   password: "testpassword",
 }
+const invalidTestUser: UserInfo = {
+  email: "invalidTest@user.com",
+  password: "1234",
+}
 //describe creates a block that groups together several related tests
 describe("Auth Test", () => {
   test("Auth Register", async () => {
@@ -60,6 +66,55 @@ describe("Auth Test", () => {
     testUser.accessToken = accessToken;
     testUser.refreshToken= refreshToken;
     testUser._id = userId;
+  });
+
+  test("Login fails when TOKEN_SECRET is missing", async () => {
+    const originalSecret = process.env.TOKEN_SECRET;
+    delete process.env.TOKEN_SECRET;
+  
+    const response = await request(app).post("/auth/login").send(testUser);
+    expect(response.statusCode).toBe(400);
+    expect(response.text).toContain("Missing auth configuration");
+  
+    process.env.TOKEN_SECRET = originalSecret;
+  });
+
+  test("Refresh fails when user is not found", async () => {
+    const invalidToken = jwt.sign({ _id: "invalidUserId" }, process.env.TOKEN_SECRET as string);
+  
+    const response = await request(app).post("/auth/refresh").send({
+      refreshToken: invalidToken,
+    });
+  
+    expect(response.statusCode).toBe(400);
+    expect(response.text).toContain("Invalid Token");
+  });
+
+  test("Refresh fails when TOKEN_SECRET is missing", async () => {
+    const originalSecret = process.env.TOKEN_SECRET;
+    delete process.env.TOKEN_SECRET;
+  
+    const response = await request(app).post("/auth/refresh").send({
+      refreshToken: testUser.refreshToken,
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.text).toContain("Missing auth configuration");
+  
+    process.env.TOKEN_SECRET = originalSecret;
+  });
+
+  test("Refresh fails when refresh token is invalid", async () => {
+    const response = await request(app).post("/auth/refresh").send({
+      refreshToken: "invalid  token", // invalid token  
+    });
+    expect(response.statusCode).toBe(403);
+    expect(response.text).toContain("Invalid Refresh Token");
+  } );
+
+  test("Refresh fails when refresh token is missing", async () => {
+    const response = await request(app).post("/auth/refresh").send({});
+    expect(response.statusCode).toBe(400);
+    expect(response.text).toContain("Invalid Token");
   });
 
   test("Make sure two access tokens are not the same", async () => {
@@ -207,9 +262,18 @@ describe("Auth Test", () => {
   });
 
   //---------New Login Tests--------------
+  
   test("Login with missing email", async () => {
     const response = await request(app).post("/auth/login").send({ password: "testpassword" });
     expect(response.statusCode).toBe(400);
+  });
+
+  test('should not get posts without token', async () => {
+    const res = await request(app)
+        .post('/posts');
+    expect(res.statusCode).toEqual(401);
+    expect(res.text).toContain('Missing Token');
+    
   });
 
   test("Login with missing password", async () => {
@@ -236,6 +300,8 @@ describe("Auth Test", () => {
   });
 
   //---------New Logout Tests--------------
+
+  
   test("Logout with missing refresh token", async () => {
     const response = await request(app).post("/auth/logout").send({});
     expect(response.statusCode).toBe(400);
@@ -260,6 +326,11 @@ describe("Auth Test", () => {
     const response = await request(app).post("/auth/register").send({ email: "test@user.com" });
     expect(response.statusCode).toBe(400);
   });
+  test("Register with missing email and password", async () => {
+    const response = await request(app).post("/auth/register").send({});
+    expect(response.statusCode).toBe(400);
+  });
+  
 
   test("Register with valid email and password", async () => {
     const response = await request(app).post("/auth/register").send(testUser);
@@ -284,5 +355,38 @@ describe("Auth Test", () => {
     expect(response.body.accessToken).toBeDefined();
   });
 
+  
+
+test("Login with missing TOKEN_SECRET", async () => {
+    const originalSecret = process.env.TOKEN_SECRET;
+    delete process.env.TOKEN_SECRET;
+
+    const response = await request(app).post("/auth/login").send(testUser);
+    expect(response.statusCode).toBe(400);
+    expect(response.text).toContain("Missing auth configuration");
+
+    process.env.TOKEN_SECRET = originalSecret; // Restore secret
+});
+
+test("Refresh with missing refresh token", async () => {
+  const response = await request(app).post("/auth/refresh").send({});
+  expect(response.statusCode).toBe(400);
+  expect(response.text).toContain("Invalid Token");
+  
+});
+
+
+
+test("Refresh with invalid refresh token", async () => {
+  const response = await request(app).post("/auth/refresh").send({
+      refreshToken: "invalidtoken",
+  });
+  expect(response.statusCode).toBe(403);
+  expect(response.text).toContain("Invalid Refresh Token");
+});
+
+
 
 });
+
+

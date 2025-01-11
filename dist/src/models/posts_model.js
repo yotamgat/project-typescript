@@ -1,18 +1,44 @@
 "use strict";
-//import mongoose from "mongoose";
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
-const postSchema = new mongoose_1.Schema({
+const PostSchema = new mongoose_1.Schema({
     title: {
         type: String,
         required: true,
     },
-    content: String,
+    content: {
+        type: String,
+        required: true,
+    },
     owner: {
-        type: mongoose_1.Schema.Types.ObjectId,
-        ref: "Users",
+        type: mongoose_1.Schema.ObjectId,
+        required: true,
     },
 });
-const postModel = (0, mongoose_1.model)("Posts", postSchema);
-exports.default = postModel;
+exports.default = (0, mongoose_1.model)("Posts", PostSchema);
+//import mongoose from "mongoose";
+/*import {Schema,model, Types} from "mongoose";
+
+export interface IPost {
+  title: string;
+  content: string;
+  owner: Types.ObjectId;
+}
+
+const postSchema = new Schema<IPost>({
+  title: {
+    type: String,
+    required: true,
+  },
+  content: String,
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: "Users",
+  },
+  
+});
+
+const postModel = model<IPost>("Posts", postSchema);
+export default postModel;
+*/
 //# sourceMappingURL=posts_model.js.map

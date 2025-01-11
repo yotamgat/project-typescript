@@ -7,11 +7,11 @@ const express_1 = __importDefault(require("express"));
 const post_controller_1 = __importDefault(require("../controllers/post_controller"));
 const auth_controller_1 = require("../controllers/auth_controller");
 const router = express_1.default.Router();
-router.get("/", post_controller_1.default.getAll.bind(post_controller_1.default));
-router.get("/:id", post_controller_1.default.getById.bind(post_controller_1.default));
-router.post("/", auth_controller_1.authMiddleware, post_controller_1.default.createItem.bind(post_controller_1.default));
-router.delete("/:id", auth_controller_1.authMiddleware, post_controller_1.default.deleteItem.bind(post_controller_1.default));
-router.put("/:id", auth_controller_1.authMiddleware, post_controller_1.default.updateItem.bind(post_controller_1.default));
+router.get("/", post_controller_1.default.getAllPosts.bind(post_controller_1.default));
+router.get("/:id", post_controller_1.default.getPostById.bind(post_controller_1.default));
+router.post("/", auth_controller_1.authMiddleware, post_controller_1.default.createPost.bind(post_controller_1.default));
+router.delete("/:id", auth_controller_1.authMiddleware, post_controller_1.default.deletePost.bind(post_controller_1.default));
+router.put("/:id", auth_controller_1.authMiddleware, post_controller_1.default.updatePost.bind(post_controller_1.default));
 /**
  * @swagger
  * tags:

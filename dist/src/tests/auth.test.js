@@ -17,6 +17,7 @@ const server_1 = __importDefault(require("../server")); // Link to your server f
 const mongoose_1 = __importDefault(require("mongoose"));
 const users_model_1 = __importDefault(require("../models/users_model"));
 const posts_model_1 = __importDefault(require("../models/posts_model"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 let app;
 // runs before all tests
 beforeAll(() => __awaiter(void 0, void 0, void 0, function* () {
@@ -34,6 +35,10 @@ const baseUrl = "/auth";
 const testUser = {
     email: "test@user.com",
     password: "testpassword",
+};
+const invalidTestUser = {
+    email: "invalidTest@user.com",
+    password: "1234",
 };
 //describe creates a block that groups together several related tests
 describe("Auth Test", () => {
@@ -57,6 +62,44 @@ describe("Auth Test", () => {
         testUser.accessToken = accessToken;
         testUser.refreshToken = refreshToken;
         testUser._id = userId;
+    }));
+    test("Login fails when TOKEN_SECRET is missing", () => __awaiter(void 0, void 0, void 0, function* () {
+        const originalSecret = process.env.TOKEN_SECRET;
+        delete process.env.TOKEN_SECRET;
+        const response = yield (0, supertest_1.default)(app).post("/auth/login").send(testUser);
+        expect(response.statusCode).toBe(400);
+        expect(response.text).toContain("Missing auth configuration");
+        process.env.TOKEN_SECRET = originalSecret;
+    }));
+    test("Refresh fails when user is not found", () => __awaiter(void 0, void 0, void 0, function* () {
+        const invalidToken = jsonwebtoken_1.default.sign({ _id: "invalidUserId" }, process.env.TOKEN_SECRET);
+        const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: invalidToken,
+        });
+        expect(response.statusCode).toBe(400);
+        expect(response.text).toContain("Invalid Token");
+    }));
+    test("Refresh fails when TOKEN_SECRET is missing", () => __awaiter(void 0, void 0, void 0, function* () {
+        const originalSecret = process.env.TOKEN_SECRET;
+        delete process.env.TOKEN_SECRET;
+        const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: testUser.refreshToken,
+        });
+        expect(response.statusCode).toBe(400);
+        expect(response.text).toContain("Missing auth configuration");
+        process.env.TOKEN_SECRET = originalSecret;
+    }));
+    test("Refresh fails when refresh token is invalid", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: "invalid  token", // invalid token  
+        });
+        expect(response.statusCode).toBe(403);
+        expect(response.text).toContain("Invalid Refresh Token");
+    }));
+    test("Refresh fails when refresh token is missing", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({});
+        expect(response.statusCode).toBe(400);
+        expect(response.text).toContain("Invalid Token");
     }));
     test("Make sure two access tokens are not the same", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).post(baseUrl + "/login").send({
@@ -185,6 +228,12 @@ describe("Auth Test", () => {
         const response = yield (0, supertest_1.default)(app).post("/auth/login").send({ password: "testpassword" });
         expect(response.statusCode).toBe(400);
     }));
+    test('should not get posts without token', () => __awaiter(void 0, void 0, void 0, function* () {
+        const res = yield (0, supertest_1.default)(app)
+            .post('/posts');
+        expect(res.statusCode).toEqual(401);
+        expect(res.text).toContain('Missing Token');
+    }));
     test("Login with missing password", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).post("/auth/login").send({ email: "test@user.com" });
         expect(response.statusCode).toBe(400);
@@ -226,6 +275,10 @@ describe("Auth Test", () => {
         const response = yield (0, supertest_1.default)(app).post("/auth/register").send({ email: "test@user.com" });
         expect(response.statusCode).toBe(400);
     }));
+    test("Register with missing email and password", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/register").send({});
+        expect(response.statusCode).toBe(400);
+    }));
     test("Register with valid email and password", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).post("/auth/register").send(testUser);
         expect(response.statusCode).not.toBe(200);
@@ -244,6 +297,26 @@ describe("Auth Test", () => {
         const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({ refreshToken: loginResponse.body.refreshToken });
         expect(response.statusCode).toBe(200);
         expect(response.body.accessToken).toBeDefined();
+    }));
+    test("Login with missing TOKEN_SECRET", () => __awaiter(void 0, void 0, void 0, function* () {
+        const originalSecret = process.env.TOKEN_SECRET;
+        delete process.env.TOKEN_SECRET;
+        const response = yield (0, supertest_1.default)(app).post("/auth/login").send(testUser);
+        expect(response.statusCode).toBe(400);
+        expect(response.text).toContain("Missing auth configuration");
+        process.env.TOKEN_SECRET = originalSecret; // Restore secret
+    }));
+    test("Refresh with missing refresh token", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({});
+        expect(response.statusCode).toBe(400);
+        expect(response.text).toContain("Invalid Token");
+    }));
+    test("Refresh with invalid refresh token", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: "invalidtoken",
+        });
+        expect(response.statusCode).toBe(403);
+        expect(response.text).toContain("Invalid Refresh Token");
     }));
 });
 //# sourceMappingURL=auth.test.js.map

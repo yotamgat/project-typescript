@@ -21,6 +21,7 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "*");
   next();
 });
+
 app.use("/posts", postsRoutes);
 app.use("/comments", commentsRoutes);
 app.use("/auth", authRoutes);
@@ -52,11 +53,13 @@ const initApp = ():Promise<Express> => {
     db.on("error", console.error.bind(console, "connection error:"));
     db.once("open", function(){console.log("Connected to MongoDB");});
     if (!process.env.DB_CONNECTION) {
-      reject("DB_CONNECT is not defined in .env file");
+      return reject("DB_CONNECT is not defined in .env file");
     } else {
-      mongoose.connect(process.env.DB_CONNECTION).then(() => {resolve(app);
+      mongoose.connect(process.env.DB_CONNECTION).then(() => {
+        return resolve(app);
       }).catch((err) => {
-        reject(err);}); 
+        
+        return reject(err);}); 
     }
   });
 };

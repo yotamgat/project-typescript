@@ -13,26 +13,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const comments_model_1 = __importDefault(require("../models/comments_model"));
-const base_controller_1 = __importDefault(require("./base_controller"));
-class CommentController extends base_controller_1.default {
-    constructor() {
-        super(comments_model_1.default);
-    }
-    createItem(req, res) {
-        const _super = Object.create(null, {
-            createItem: { get: () => super.createItem }
-        });
+class CommentController {
+    getAllComments(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const userId = req.params.userId;
-            const comment = Object.assign(Object.assign({}, req.body), { owner: userId });
-            req.body = comment;
-            _super.createItem.call(this, req, res);
+            try {
+                const comments = yield comments_model_1.default.find();
+                res.send(comments);
+            }
+            catch (err) {
+                res.status(400).send(err);
+            }
         });
     }
-    ;
     getAllCommentsByPostId(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log("Request Query:", req.query);
             const postId = req.query.postId;
             console.log("Received postId:", postId);
             if (!postId) {
@@ -47,7 +41,63 @@ class CommentController extends base_controller_1.default {
             }
         });
     }
-    ;
+    getCommentById(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const id = req.params.id;
+            try {
+                const comment = yield comments_model_1.default.findById(id);
+                if (comment != null) {
+                    res.status(200).send(comment);
+                }
+                else {
+                    res.status(404).send("Not found");
+                }
+            }
+            catch (err) {
+                res.status(404).send(err);
+            }
+        });
+    }
+    deleteComment(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const id = req.params.id;
+            try {
+                const rs = yield comments_model_1.default.findByIdAndDelete(id);
+                res.status(200).send("Comment Deleted");
+            }
+            catch (error) {
+                res.status(400).send(error);
+            }
+        });
+    }
+    createComment(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const userId = req.userId;
+            const comment = Object.assign(Object.assign({}, req.body), { owner: userId });
+            console.log(req.body);
+            req.body = comment;
+            try {
+                const comment = yield comments_model_1.default.create(req.body);
+                res.status(201).send(comment);
+            }
+            catch (err) {
+                res.status(400).send(err);
+            }
+        });
+    }
+    updateComment(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const id = req.params.id;
+            const body = req.body;
+            try {
+                const comment = yield comments_model_1.default.findByIdAndUpdate(id, body, { new: true });
+                res.status(200).send(comment);
+            }
+            catch (err) {
+                res.status(400).send(err);
+            }
+        });
+    }
 }
 exports.default = new CommentController();
 //# sourceMappingURL=comment_controller.js.map

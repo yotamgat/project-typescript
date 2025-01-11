@@ -1,3 +1,5 @@
+
+/*
 import { Request, Response } from "express";
 import {  Model } from "mongoose";
 
@@ -72,3 +74,5 @@ class BaseController<T> {
 }
 
 export default BaseController;
+
+*/

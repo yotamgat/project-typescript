@@ -4,11 +4,11 @@ import { authMiddleware } from "../controllers/auth_controller";
 
 const router = express.Router();
 
-router.get("/", postController.getAll.bind(postController));
-router.get("/:id", postController.getById.bind(postController));
-router.post("/", authMiddleware ,postController.createItem.bind(postController));
-router.delete("/:id", authMiddleware ,postController.deleteItem.bind(postController));
-router.put("/:id", authMiddleware, postController.updateItem.bind(postController));
+router.get("/", postController.getAllPosts.bind(postController));
+router.get("/:id", postController.getPostById.bind(postController));
+router.post("/", authMiddleware ,postController.createPost.bind(postController));
+router.delete("/:id", authMiddleware ,postController.deletePost.bind(postController));
+router.put("/:id", authMiddleware, postController.updatePost.bind(postController));
 
 
 /**

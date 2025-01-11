@@ -69,6 +69,10 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             return;
         }
         //Verify password
+        if (typeof user.password !== 'string') {
+            res.status(400).send('Invalid password format');
+            return;
+        }
         const validPassword = yield bcrypt_1.default.compare(password, user.password); // compare the password with the hashed password   
         if (!validPassword) { // if password is invalid, send error response
             res.status(400).send('Wrong username or password');
@@ -209,9 +213,8 @@ const authMiddleware = (req, res, next) => {
             res.status(403).send('Invalid Token');
             return;
         }
-        const payload = data;
-        req.params.userId = payload._id; // set the user id in the request object
-        next();
+        req.userId = data._id; // set the user id in the request object
+        return next();
     });
 };
 exports.authMiddleware = authMiddleware;

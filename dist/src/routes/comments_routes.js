@@ -7,12 +7,12 @@ const express_1 = __importDefault(require("express"));
 const router = express_1.default.Router();
 const comment_controller_1 = __importDefault(require("../controllers/comment_controller"));
 const auth_controller_1 = require("../controllers/auth_controller");
-router.get("/", comment_controller_1.default.getAll.bind(comment_controller_1.default));
-router.get("/:id", comment_controller_1.default.getById.bind(comment_controller_1.default));
+router.get("/:id", comment_controller_1.default.getCommentById.bind(comment_controller_1.default));
+router.get("/", comment_controller_1.default.getAllComments.bind(comment_controller_1.default));
 router.get("/get-all-comments/:postId", comment_controller_1.default.getAllCommentsByPostId.bind(comment_controller_1.default));
-router.post("/", auth_controller_1.authMiddleware, comment_controller_1.default.createItem.bind(comment_controller_1.default));
-router.put("/:id", auth_controller_1.authMiddleware, comment_controller_1.default.updateItem.bind(comment_controller_1.default));
-router.delete("/:id", auth_controller_1.authMiddleware, comment_controller_1.default.deleteItem.bind(comment_controller_1.default)); //delete the post with specific id
+router.post("/", auth_controller_1.authMiddleware, comment_controller_1.default.createComment.bind(comment_controller_1.default));
+router.put("/:id", auth_controller_1.authMiddleware, comment_controller_1.default.updateComment.bind(comment_controller_1.default));
+router.delete("/:id", auth_controller_1.authMiddleware, comment_controller_1.default.deleteComment.bind(comment_controller_1.default)); //delete the post with specific id
 /**
  * @swagger
  * tags:
@@ -73,6 +73,7 @@ router.delete("/:id", auth_controller_1.authMiddleware, comment_controller_1.def
  *               postId:
  *                type: string
  *                description: The ID of the post the comment is associated with
+ *                example: 60f3b4b3b3b3b3b3b3b3b3
  *     responses:
  *       201:
  *         description: Comment created successfully

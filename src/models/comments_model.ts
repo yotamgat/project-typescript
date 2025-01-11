@@ -1,3 +1,24 @@
+import { Schema, model,Types } from "mongoose";
+
+const commentSchema = new Schema({
+  comment: {
+    type: String,
+    required: true,
+  },
+  postId: {
+    type: Schema.Types.ObjectId,
+    required: true,
+  },
+  owner: {
+    type: Schema.Types.ObjectId,
+    required: true,
+  },
+});
+
+export default model("Comments", commentSchema);
+
+
+/*
 //import mongoose from "mongoose";
 //import {Schema,model} from 'mongoose'
 import { Schema, model, Types } from "mongoose";
@@ -24,3 +45,4 @@ const commentSchema = new Schema<IComment>({
 
 const commentsModel = model<IComment>("comments", commentSchema);
 export default commentsModel;
+*/

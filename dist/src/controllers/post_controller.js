@@ -13,22 +13,111 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const posts_model_1 = __importDefault(require("../models/posts_model"));
-const base_controller_1 = __importDefault(require("./base_controller"));
-class PostController extends base_controller_1.default {
+class PostController {
     constructor() {
-        super(posts_model_1.default);
-    }
-    createItem(req, res) {
-        const _super = Object.create(null, {
-            createItem: { get: () => super.createItem }
+        this.createPost = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            console.log(req.body);
+            const userId = req.userId; // Ensure this matches the route parameter name
+            if (!userId) {
+                res.status(400).send("Missing userId query parameter");
+                return;
+            }
+            const { title, content } = req.body;
+            if (!title || !content) {
+                res.status(400).send("Missing title or content in request body");
+            }
+            try {
+                const post = yield posts_model_1.default.create({
+                    title,
+                    content,
+                    owner: userId,
+                });
+                res.status(201).send(post);
+            }
+            catch (err) {
+                res.status(400).send(err);
+            }
         });
+    }
+    getAllPosts(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const userId = req.params.userId;
-            const post = Object.assign(Object.assign({}, req.body), { owner: userId });
-            req.body = post;
-            _super.createItem.call(this, req, res);
+            const ownerFilter = req.query.owner;
+            try {
+                if (ownerFilter) {
+                    const post = yield posts_model_1.default.find({ owner: ownerFilter });
+                    res.send(post);
+                }
+                else {
+                    const post = yield posts_model_1.default.find();
+                    res.send(post);
+                }
+            }
+            catch (err) {
+                res.status(400).send(err);
+            }
         });
     }
+    ;
+    getPostById(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const id = req.params.id;
+            try {
+                const post = yield posts_model_1.default.findById(id);
+                if (post != null) {
+                    res.send(post);
+                }
+                else {
+                    res.status(404).send("Not found");
+                }
+            }
+            catch (err) {
+                res.status(400).send(err);
+            }
+        });
+    }
+    ;
+    deletePost(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const id = req.params.id;
+            try {
+                const rs = yield posts_model_1.default.findByIdAndDelete(id);
+                res.status(200).send("Post Deleted");
+            }
+            catch (error) {
+                res.status(400).send(error);
+            }
+        });
+    }
+    ;
+    updatePost(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const id = req.params.id;
+            const body = req.body;
+            try {
+                const post = yield posts_model_1.default.findByIdAndUpdate(id, body, { new: true });
+                res.status(200).send(post);
+            }
+            catch (err) {
+                res.status(400).send(err);
+            }
+        });
+    }
+    ;
 }
 exports.default = new PostController();
+/*class PostController extends BaseController<IPost> {
+  constructor() {
+    super(postModel);
+  }
+  async createItem(req: Request, res: Response) {
+      const userId = req.params.userId;
+      const post ={
+        ...req.body,
+        owner: userId
+      };
+      req.body = post;
+      super.createItem(req, res);
+  }
+}
+  */
 //# sourceMappingURL=post_controller.js.map

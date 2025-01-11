@@ -3,12 +3,13 @@ const router = express.Router();
 import commentsController from "../controllers/comment_controller";
 import { authMiddleware } from "../controllers/auth_controller";
 
-router.get("/", commentsController.getAll.bind(commentsController));
-router.get("/:id", commentsController.getById.bind(commentsController));
+
+router.get("/:id", commentsController.getCommentById.bind(commentsController));
+router.get("/", commentsController.getAllComments.bind(commentsController));
 router.get("/get-all-comments/:postId", commentsController.getAllCommentsByPostId.bind(commentsController));
-router.post("/",authMiddleware, commentsController.createItem.bind(commentsController));
-router.put("/:id", authMiddleware, commentsController.updateItem.bind(commentsController));
-router.delete("/:id",authMiddleware, commentsController.deleteItem.bind(commentsController)); //delete the post with specific id
+router.post("/",authMiddleware, commentsController.createComment.bind(commentsController));
+router.put("/:id", authMiddleware, commentsController.updateComment.bind(commentsController));
+router.delete("/:id",authMiddleware, commentsController.deleteComment.bind(commentsController)); //delete the post with specific id
 
 
 /**
@@ -74,6 +75,7 @@ router.delete("/:id",authMiddleware, commentsController.deleteItem.bind(comments
  *               postId:
  *                type: string
  *                description: The ID of the post the comment is associated with
+ *                example: 60f3b4b3b3b3b3b3b3b3b3
  *     responses:
  *       201:
  *         description: Comment created successfully

@@ -1,5 +1,5 @@
 import {NextFunction, Request, Response} from 'express';
-import userModel from '../models/users_model';
+import userModel,{IUser} from '../models/users_model';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -64,6 +64,10 @@ const login = async (req: Request, res: Response) => {
             return;
         } 
         //Verify password
+        if (typeof user.password !== 'string') {
+            res.status(400).send('Invalid password format');
+            return;
+        }
         const validPassword = await bcrypt.compare(password, user.password); // compare the password with the hashed password   
         if (!validPassword) { // if password is invalid, send error response
             res.status(400).send('Wrong username or password');
@@ -193,6 +197,11 @@ type TokenPayload = {
     _id: string
     
 };
+declare module 'express-serve-static-core' {
+    interface Request {
+      userId?: string;
+    }
+  }
 //Middleware to authenticate the user with token
 export const authMiddleware = (req: Request, res: Response, next:NextFunction) => {
     const authorization = req.header('authorization'); // get the token from the header
@@ -208,17 +217,18 @@ export const authMiddleware = (req: Request, res: Response, next:NextFunction) =
         return;
     }
 
+
     // verify the token with the secret key
     jwt.verify(token, process.env.TOKEN_SECRET,(err,data)=>{
         if(err) {
             res.status(403).send('Invalid Token');
             return;
         }
-        const payload = data as TokenPayload;
+       
         
-        req.params.userId = payload._id; // set the user id in the request object
+        req.userId = (data as any)._id; // set the user id in the request object
         
-        next();
+        return next();
     }); 
     
 };
