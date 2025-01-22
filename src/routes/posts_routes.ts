@@ -9,6 +9,9 @@ router.get("/:id", postController.getPostById.bind(postController));
 router.post("/", authMiddleware ,postController.createPost.bind(postController));
 router.delete("/:id", authMiddleware ,postController.deletePost.bind(postController));
 router.put("/:id", authMiddleware, postController.updatePost.bind(postController));
+router.get('/get-all-posts/:owner', authMiddleware, postController.getPostsByOwner.bind(postController));
+
+
 
 
 /**
@@ -16,8 +19,31 @@ router.put("/:id", authMiddleware, postController.updatePost.bind(postController
  * tags:
  *  name: Posts
  *  description: The Posts API
- */
+*/
 
+/**
+* @swagger
+* /posts/get-all-posts/{owner}:
+*   get:
+*     summary: Get all owner posts
+*     tags: [Posts]
+*     security:
+*       - bearerAuth: []
+*     parameters:
+*       - in: query
+*         name: owner
+*         schema:
+*           type: string
+*         required: true
+*         description: The owner ID
+*     responses:
+*       200:
+*         description: Comments retrieved successfully
+*       400:
+*         description: ownerId is required
+*       404:
+*         description: Post not found
+*/
 
 /**
 * @swagger

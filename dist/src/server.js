@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -14,6 +23,7 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const auth_routes_1 = __importDefault(require("./routes/auth_routes"));
 const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
+const file_routes_1 = __importDefault(require("./routes/file_routes"));
 app.use(body_parser_1.default.json());
 app.use(body_parser_1.default.urlencoded({ extended: true }));
 app.use((req, res, next) => {
@@ -22,25 +32,17 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "*");
     next();
 });
-app.use("/posts", posts_routes_1.default);
-app.use("/comments", comments_routes_1.default);
-app.use("/auth", auth_routes_1.default);
+const delay = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    yield new Promise((r) => setTimeout(() => r(), 2000));
+    next();
+});
+app.use("/posts", delay, posts_routes_1.default);
+app.use("/comments", delay, comments_routes_1.default);
+app.use("/auth", delay, auth_routes_1.default);
+app.use("/file", file_routes_1.default);
+app.use("/public", express_1.default.static("public"));
+app.use(express_1.default.static("front"));
 app.get("/about", (req, res) => { res.send("About Page"); });
-//swagger
-const options = {
-    definition: {
-        openapi: "3.0.0",
-        info: {
-            title: "Web Dev 2025 REST API",
-            version: "1.0.0",
-            description: "REST server including JWT authentication",
-        },
-        servers: [{ url: "http://localhost:3000", },],
-    },
-    apis: ["./src/routes/*.ts"],
-};
-const specs = (0, swagger_jsdoc_1.default)(options);
-app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(specs));
 const initApp = () => {
     return new Promise((resolve, reject) => {
         const db = mongoose_1.default.connection;
@@ -58,5 +60,20 @@ const initApp = () => {
         }
     });
 };
+//swagger
+const swaggerOptions = {
+    definition: {
+        openapi: "3.0.0",
+        info: {
+            title: "Web Dev 2025 REST API",
+            version: "1.0.0",
+            description: "REST server including JWT authentication",
+        },
+        servers: [{ url: "http://localhost:3000", },],
+    },
+    apis: ["./src/routes/*.ts"],
+};
+const swaggerDocs = (0, swagger_jsdoc_1.default)(swaggerOptions);
+app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocs));
 exports.default = initApp;
 //# sourceMappingURL=server.js.map

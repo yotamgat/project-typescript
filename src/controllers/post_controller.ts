@@ -1,36 +1,52 @@
 import postModel from "../models/posts_model";
 import { Request, Response } from "express";
-import { Error, ObjectId } from "mongoose";
+import mongoose, { Error, ObjectId } from "mongoose";
 
 
 class PostController{
-  async getAllPosts(req: Request, res: Response) { 
-    const ownerFilter = req.query.owner;
-    try {
-      if (ownerFilter) {
-        const post = await postModel.find({ owner: ownerFilter });
-        res.send(post);
-      } else {
-        const post = await postModel.find();
-        res.send(post);
-      }
-    } catch (err) {
-      res.status(400).send(err);
-    }
-  };
-  async getPostById(req: Request, res: Response) {
-    const id = req.params.id;
-    try {
-      const post = await postModel.findById(id);
-      if (post != null) {
-        res.send(post);
-      } else {
-         res.status(404).send("Not found");
-      }
-    } catch (err) {
-      res.status(400).send(err);
-    }
-  };
+  
+    async getAllPosts(req: Request, res: Response) { 
+        const ownerFilter = req.query.owner;
+        try {
+            if (ownerFilter) {
+              const post = await postModel.find({ owner: ownerFilter });
+              res.send(post);
+            } else {
+              const post = await postModel.find();
+              res.send(post);
+            }
+        } catch (err) {
+            res.status(400).send(err);
+        }
+    };
+    async getPostsByOwner(req: Request, res: Response) {
+
+         const userId = req.query.owner as string;
+         if (!userId) {
+           res.status(400).send("userId is required");
+         }
+         try {
+           const posts = await postModel.find({ owner: userId });
+           res.status(200).send(posts);
+         } catch (err) {
+           res.status(400).send(err);
+         }
+     
+       }
+
+    async getPostById(req: Request, res: Response) {
+        const id = req.params.id;
+        try {
+            const post = await postModel.findById(id);
+            if (post != null) {
+              res.send(post);
+            } else {
+              res.status(404).send("Not found");
+            }
+        } catch (err) {
+            res.status(400).send(err);
+        }
+    };
   async deletePost(req: Request, res: Response) {
     const id = req.params.id;
     try {
@@ -41,6 +57,7 @@ class PostController{
     }
   };
   createPost = async (req: Request, res: Response): Promise<void> => {
+    console.log("check");
     console.log(req.body);
     const userId = req.userId as string; // Ensure this matches the route parameter name
     if (!userId) {

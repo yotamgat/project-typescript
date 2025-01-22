@@ -10,7 +10,7 @@ const PostSchema = new Schema({
     required: true,
   },
   owner: {
-    type: Schema.ObjectId,
+    type: Schema.Types.ObjectId,
     required: true,
   },
 })

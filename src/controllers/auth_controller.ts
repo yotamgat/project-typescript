@@ -112,7 +112,7 @@ const logout = async (req: Request, res: Response) => {
             res.status(403).send('Invalid Refresh Token');
             return;
         }
-        const payload = data as TokenPayload;
+        const payload = data as JwtPayload;
         try{
             const user = await userModel.findById({_id:payload._id}); 
             if(!user) {
@@ -152,7 +152,7 @@ const refresh = async (req: Request, res: Response) => {
             return;
         }
         //find the user
-        const payload = data as TokenPayload;
+        const payload = data as JwtPayload;
         try{
             const user = await userModel.findById({_id:payload._id});
             if(!user) {
@@ -193,7 +193,7 @@ const refresh = async (req: Request, res: Response) => {
 };
 
 
-type TokenPayload = {
+type JwtPayload = {
     _id: string
     
 };
@@ -206,34 +206,35 @@ declare module 'express-serve-static-core' {
 export const authMiddleware = (req: Request, res: Response, next:NextFunction) => {
     const authorization = req.header('authorization'); // get the token from the header
     const token = authorization && authorization.split(' ')[1]; // get the token from the header 
-
+    console.log("Recived Token:", token);
     // if token is not found, send error response
     if(!token) { 
         res.status(401).send('Missing Token');
         return;
     }
     if(!process.env.TOKEN_SECRET) {
-        res.status(500).send("Missing auth configuration");
+        res.status(500).json({ message: "Missing authentication configuration" });
         return;
     }
 
-
     // verify the token with the secret key
-    jwt.verify(token, process.env.TOKEN_SECRET,(err,data)=>{
+    jwt.verify(token, process.env.TOKEN_SECRET,(err,decoded)=>{
         if(err) {
             res.status(403).send('Invalid Token');
             return;
         }
        
-        
-        req.userId = (data as any)._id; // set the user id in the request object
-        
-        return next();
+        // Safely cast the decoded token to our defined JwtPayload type
+        const payload = decoded as JwtPayload;
+
+        // Set the user ID on the request object
+        req.userId = payload._id;
+        next();
     }); 
     
 };
 
 
-export default { register, login ,logout,refresh};
+export default { register, login ,logout,refresh, authMiddleware};
 
 

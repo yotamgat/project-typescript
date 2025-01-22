@@ -6,7 +6,7 @@ import { authMiddleware } from "../controllers/auth_controller";
 
 router.get("/:id", commentsController.getCommentById.bind(commentsController));
 router.get("/", commentsController.getAllComments.bind(commentsController));
-router.get("/get-all-comments/:postId", commentsController.getAllCommentsByPostId.bind(commentsController));
+router.get("/get-all-comments/:postId" ,commentsController.getAllCommentsByPostId.bind(commentsController));
 router.post("/",authMiddleware, commentsController.createComment.bind(commentsController));
 router.put("/:id", authMiddleware, commentsController.updateComment.bind(commentsController));
 router.delete("/:id",authMiddleware, commentsController.deleteComment.bind(commentsController)); //delete the post with specific id
@@ -17,6 +17,27 @@ router.delete("/:id",authMiddleware, commentsController.deleteComment.bind(comme
  * tags:
  *   name: Comments
  *   description: The Comments API
+ */
+/**
+ * @swagger
+ * /comments/get-all-comments/{postId}:
+ *   get:
+ *     summary: Get all comments for a post
+ *     tags: [Comments]
+ *     parameters:
+ *       - in: query
+ *         name: postId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The ID of the post
+ *     responses:
+ *       200:
+ *         description: Comments retrieved successfully
+ *       400:
+ *         description: postId is required
+ *       404:
+ *         description: Post not found
  */
 
 /**
@@ -161,27 +182,7 @@ router.delete("/:id",authMiddleware, commentsController.deleteComment.bind(comme
  *         description: Comment not found
  */
 
-/**
- * @swagger
- * /comments/get-all-comments/{postId}:
- *   get:
- *     summary: Get all comments for a post
- *     tags: [Comments]
- *     parameters:
- *       - in: query
- *         name: postId
- *         schema:
- *           type: string
- *         required: true
- *         description: The ID of the post
- *     responses:
- *       200:
- *         description: Comments retrieved successfully
- *       400:
- *         description: postId is required
- *       404:
- *         description: Post not found
- */
+
 
 
 

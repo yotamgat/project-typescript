@@ -15,6 +15,7 @@ class CommentController {
 
   async getAllCommentsByPostId(req: Request, res: Response) {
     const postId = req.query.postId as string;
+    console.log(req.body)
     console.log("Received postId:", postId);
     if (!postId) {
       res.status(400).send("PostId is required");

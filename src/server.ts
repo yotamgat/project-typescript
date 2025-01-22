@@ -1,5 +1,5 @@
 
-import express, { Express } from "express";
+import express, { Express,NextFunction,Request,Response } from "express";
 const app = express();
 import dotenv from "dotenv";
 dotenv.config();
@@ -10,6 +10,7 @@ import bodyParser from "body-parser";
 import authRoutes from "./routes/auth_routes";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUI from "swagger-ui-express";
+import fileRouter from "./routes/file_routes";
 
 
 
@@ -22,28 +23,18 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/posts", postsRoutes);
-app.use("/comments", commentsRoutes);
-app.use("/auth", authRoutes);
+const delay=async (req: Request, res: Response, next: NextFunction) => {
+  await new Promise<void>((r) => setTimeout(()=>r(), 2000));
+  next();
+}
+
+app.use("/posts", delay,postsRoutes);
+app.use("/comments",delay, commentsRoutes);
+app.use("/auth",delay, authRoutes);
+app.use("/file",fileRouter);
+app.use("/public",express.static("public"));
+app.use(express.static("front"));
 app.get("/about", (req, res) => {res.send("About Page");});
-
-//swagger
-const options = {
-  definition: {
-    openapi: "3.0.0",
-    info: {
-      title: "Web Dev 2025 REST API",
-      version: "1.0.0",
-      description: "REST server including JWT authentication",
-      },
-      servers: [{url: "http://localhost:3000",},],
-    },
-  apis: ["./src/routes/*.ts"],
-};
-const specs = swaggerJsdoc(options);
-app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs));
-
-
 
 
 
@@ -63,5 +54,21 @@ const initApp = ():Promise<Express> => {
     }
   });
 };
+
+//swagger
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Web Dev 2025 REST API",
+      version: "1.0.0",
+      description: "REST server including JWT authentication",
+      },
+      servers: [{url: "http://localhost:3000",},],
+    },
+  apis: ["./src/routes/*.ts"],
+};
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
 export default initApp;
