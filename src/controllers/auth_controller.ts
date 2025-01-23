@@ -1,26 +1,46 @@
 import {NextFunction, Request, Response} from 'express';
 import userModel,{IUser} from '../models/users_model';
+import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
+
 // register function to create a new user with email and password 
-const register = async (req: Request, res: Response) => {
+const register = async (req: Request, res: Response): Promise<void> => {
+
     const email = req.body.email; // get email from request
     const password = req.body.password; // get password from request
+    const username = req.body.username; // get user name from request
+ 
+
     if (!email || !password) { // if email or password is not provided, send error response
+        console.log("Missing email or password");
         res.status(400).send("Missing email or password");
         return;
     }
-    try {   
+    try {
+        // Check if the email already exists
+        const existingUser = await userModel.findOne({ email });
+        if (existingUser) {   
+           res.status(409).json({ message: 'Email already exists' });
+           return;
+        }
+        
+        //Hash the password
         const salt = await bcrypt.genSalt(10); // generate salt with 10 rounds 
-        const hashedPassword = await bcrypt.hash(password, salt); // hash the password with the salt 
-        const user = await userModel.create({  // create a new user with the email and hashed password
-            email: email,
+        const hashedPassword = await bcrypt.hash(password, salt); // hash the password with the salt
+
+        //Create a new user with the email and hashed password
+        const user = await userModel.create({  
+            email,
             password: hashedPassword,
+            username,
         }); 
-        res.status(200).send(user); // send the user object as response
-    } catch (err) {
-        res.status(400).send(err);  // send the error object as response
+   
+
+        res.status(200).json({ message: 'User registered successfully!', user }); // send the user object as response
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });  // send the error object as response
     }
 };
 
@@ -95,6 +115,57 @@ const login = async (req: Request, res: Response) => {
         res.status(400).send(err); 
     }
 }; 
+const client = new OAuth2Client();
+const googleLogin = async (req: Request, res: Response):Promise<void> => {
+    const { credential } = req.body;
+
+    if (!credential) {
+        res.status(400).json({ message: 'Missing Google credential' });
+        return;
+    }
+    try {
+        // Verify Google token
+        const ticket = await client.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        // Get user info
+        const payload = ticket.getPayload();
+        if (!payload) {
+            res.status(400).json({ message: 'Invalid Google token' });
+            return;
+        }
+
+        const { email, name } = payload;
+        // Check if user exists
+        let user = await userModel.findOne({ email });
+        console.log(user);
+        
+        if (!user) {
+            // Create a new user if not exists
+            console.log("check12");
+            user = await userModel.create({ email, username: name });
+            console.log("check");
+            console.log("User email:", user.email);
+            console.log("Username:", user.username);
+        }
+        // Generate tokens
+        const tokens = generateTokens(user._id.toString());
+        res.status(200).json({
+            email: user.email,
+            _id: user._id,
+            accessToken: tokens?.accessToken,
+            refreshToken: tokens?.refreshToken,
+        });
+        user.refreshTokens.push(tokens?.refreshToken as string);
+        await user.save();
+    } catch (error) {
+        res.status(400).json({ message: 'Google login failed', error });
+    }
+};
+
+
 
 const logout = async (req: Request, res: Response) => {
     const refreshToken = req.body.refreshToken; // get the refresh token from the request
@@ -235,6 +306,6 @@ export const authMiddleware = (req: Request, res: Response, next:NextFunction) =
 };
 
 
-export default { register, login ,logout,refresh, authMiddleware};
+export default { register, login ,logout,refresh, authMiddleware,googleLogin};
 
 

@@ -1,5 +1,5 @@
-node_moules/
+node_modules/
 dist/
 front/
-.env/
+.env
 

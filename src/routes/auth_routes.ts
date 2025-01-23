@@ -1,6 +1,7 @@
 import express from "express";
 import { Request, Response } from "express";
 import authController from "../controllers/auth_controller";
+import { authMiddleware } from "../controllers/auth_controller";
 
 const router = express.Router();
 
@@ -8,6 +9,8 @@ router.post("/register", authController.register);
 router.post("/login", authController.login);
 router.post("/logout", authController.logout);
 router.post("/refresh", authController.refresh);
+router.post('/googlelogin', authController.googleLogin);
+
 
 /**
  * @swagger
@@ -46,6 +49,31 @@ router.post("/refresh", authController.refresh);
  *      email: 'bob@gmail.com'
  *      password: '123456'
  */
+/**
+ * @swagger
+ * /auth/googlelogin:
+ *   post:
+ *     summary: Google login
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Successful login
+ *       400:
+ *         description: Email is required
+ *       500:
+ *         description: Internal server error
+ */
 
 /**
 * @swagger
@@ -68,6 +96,29 @@ router.post("/refresh", authController.refresh);
 *             $ref: '#/components/schemas/User'
 */
 
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: User logout
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Successful logout
+ *       400:
+ *         description: Refresh token is required
+ *       500:
+ *         description: Internal server error
+ */
 
 /**
 * @swagger

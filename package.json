@@ -10,7 +10,7 @@
     "testAuth": "tsc && jest --detectOpenHandles --coverage --forceExit auth.test.ts --runInBand",
     "testPost": "tsc && jest --detectOpenHandles --coverage --forceExit posts.test.ts --runInBand",
     "testComment": "tsc && jest --detectOpenHandles --coverage --forceExit comments.test.ts",
-    "testFile"  : "tsc && jest --detectOpenHandles --coverage --forceExit file.test.ts",
+    "testFile": "tsc && jest --detectOpenHandles --coverage --forceExit file.test.ts",
     "lint": "eslint . --ext .ts"
   },
   "author": "Yotam Gat",
@@ -20,6 +20,7 @@
     "body-parser": "^1.20.3",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "google-auth-library": "^9.15.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.4",
     "multer": "^1.4.5-lts.1"

@@ -5,15 +5,31 @@ import  { Schema, Document,model } from 'mongoose';
 
 interface IUser  {
   email: string;
-  password: string;
+  password?: string;
   refreshTokens: string[];
   _id?: string;
+  username: string;
 }
 
 const userSchema = new Schema<IUser>({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  refreshTokens: { type: [String], default: [] },
+    email: { 
+        type: String,
+        required: true,
+        unique: true
+    },
+    password: {
+        type: String, 
+        required: false
+    },
+    refreshTokens: {
+        type: [String],
+        default: []
+    },
+   
+    username:{
+        type: String,
+        required: true,
+    }
 });
 
 const userModel = model<IUser>('User', userSchema);
