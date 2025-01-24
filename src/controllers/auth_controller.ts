@@ -3,6 +3,7 @@ import userModel,{IUser} from '../models/users_model';
 import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { Types } from 'mongoose';
 
 
 // register function to create a new user with email and password 
@@ -43,6 +44,28 @@ const register = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ message: 'Server error', error });  // send the error object as response
     }
 };
+
+const getUserInfo = async (req: Request, res: Response): Promise<void> => {
+    console.log("Entered GetUserInfo");
+    const userId = req.userId;
+    console.log("Got User ID:", userId);
+    const user= await userModel.findById(new Types.ObjectId(userId));
+    console.log("User ID:", user?._id);
+
+    if (user) {
+        const image = user.image ? user.image : null;
+        const username = user.username ? user.username : null;
+        const userId=user._id.toString();
+        console.log("User ID:", userId);
+        console.log("Username:", username);
+        console.log("Image:", image);
+        res.status(200).json({ userId, username, image });
+    }else{
+        res.status(400).json({ error: 'User not found' });
+    }
+
+}
+
 
 const generateTokens = (_id:string):{accessToken: string, refreshToken:string} |null => {
     //Create and assign a token
@@ -108,6 +131,7 @@ const login = async (req: Request, res: Response) => {
         res.status(200).send({
             email: user.email,
             _id: user._id,
+            username: user.username,
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
             }); // send the token as response
@@ -155,6 +179,7 @@ const googleLogin = async (req: Request, res: Response):Promise<void> => {
         res.status(200).json({
             email: user.email,
             _id: user._id,
+            username: user.username,
             accessToken: tokens?.accessToken,
             refreshToken: tokens?.refreshToken,
         });
@@ -199,7 +224,7 @@ const logout = async (req: Request, res: Response) => {
             const tokens = user.refreshTokens.filter((token)=> token!==refreshToken);
             user.refreshTokens = tokens;
             await user.save();
-            res.status(200).send('Logged Out');
+            res.status(200).json({ message: 'Logged out successfully.' });
         } catch(err) {
             res.status(400).send("Invalid Token");
         }
@@ -277,6 +302,7 @@ declare module 'express-serve-static-core' {
 export const authMiddleware = (req: Request, res: Response, next:NextFunction) => {
     const authorization = req.header('authorization'); // get the token from the header
     const token = authorization && authorization.split(' ')[1]; // get the token from the header 
+    console.log("Request Headers:", req.headers);
     console.log("Recived Token:", token);
     // if token is not found, send error response
     if(!token) { 
@@ -306,6 +332,6 @@ export const authMiddleware = (req: Request, res: Response, next:NextFunction) =
 };
 
 
-export default { register, login ,logout,refresh, authMiddleware,googleLogin};
+export default { register, login ,logout,refresh, authMiddleware,googleLogin,getUserInfo};
 
 

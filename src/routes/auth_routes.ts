@@ -10,6 +10,7 @@ router.post("/login", authController.login);
 router.post("/logout", authController.logout);
 router.post("/refresh", authController.refresh);
 router.post('/googlelogin', authController.googleLogin);
+router.get("/user", authMiddleware, authController.getUserInfo);
 
 
 /**
@@ -38,6 +39,7 @@ router.post('/googlelogin', authController.googleLogin);
  *    required:
  *      - email
  *      - password
+ *      - username
  *    properties:
  *      email:
  *        type: string
@@ -45,9 +47,13 @@ router.post('/googlelogin', authController.googleLogin);
  *      password:
  *       type: string
  *       description: The user's password
+ *      username:
+ *       type: string
+ *       description: The user's username
  *    example: 
  *      email: 'bob@gmail.com'
  *      password: '123456'
+ *      username: 'bobtest'
  */
 /**
  * @swagger
@@ -86,7 +92,7 @@ router.post('/googlelogin', authController.googleLogin);
 *       content:
 *         application/json:
 *           schema:
-*             $ref: '#/components/schemas/User'
+*             $ref: '#/components/schemas/User'        
 *     responses:
 *       200:
 *        description: Registration seccess, return the new user
@@ -94,6 +100,12 @@ router.post('/googlelogin', authController.googleLogin);
 *          application/json:
 *           schema:
 *             $ref: '#/components/schemas/User'
+*       400:
+*         description: Missing email or password
+*       409:
+*         description: Email already exists
+*       500:
+*         description: Server error
 */
 
 /**

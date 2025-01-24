@@ -1,6 +1,8 @@
 import postModel from "../models/posts_model";
 import { Request, Response } from "express";
 import mongoose, { Error, ObjectId } from "mongoose";
+import { Types } from 'mongoose';
+import userModel from "../models/users_model";
 
 
 class PostController{
@@ -13,10 +15,10 @@ class PostController{
               res.send(post);
             } else {
               const post = await postModel.find();
-              res.send(post);
+              res.status(200).json(post);
             }
-        } catch (err) {
-            res.status(400).send(err);
+        } catch (error) {
+          res.status(400).json({ message: "Failed to fetch posts", error });
         }
     };
     async getPostsByOwner(req: Request, res: Response) {
@@ -57,35 +59,57 @@ class PostController{
     }
   };
   createPost = async (req: Request, res: Response): Promise<void> => {
-    console.log("check");
-    console.log(req.body);
-    const userId = req.userId as string; // Ensure this matches the route parameter name
-    if (!userId) {
-       res.status(400).send("Missing userId query parameter");
-       return;
-        
-    }
-
-    const { title, content } = req.body;
-    if (!title || !content) {
-      res.status(400).send("Missing title or content in request body");
-      
-    }
-
+    console.log("Entered createPost");
+    const userId=req.body._id;
+    console.log("userId:", userId);
     try {
-      const post = await postModel.create({
-        title,
-        content,
+     
+      const photo = req.body.photo;
+      console.log("photo:", photo);
+      console.log("Content:", req.body.content);
+      console.log("Title:", req.body.title);
+      console.log("User Img:", req.body.userImg);
+
+
+      const newPost = await postModel.create({
+        title : req.body.title,
+        content: req.body.content,
         owner: userId,
+        userImg: req.body.userImg,
+        username: req.body.username,
+        photo,
       });
-      res.status(201).send(post);
-    } catch (err) {
-      res.status(400).send(err);
+      res.status(201).json({
+        message: 'Post created successfully',
+        post: newPost,
+    });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create post", error });
       
       
     }
+  };
+  savePhoto = async (req: Request, res: Response): Promise<void> => {
+    console.log("Entered savePhoto");
   
-};
+    try {
+        if (!req.file) {
+            res.status(400).send({message:"file not found"});
+            return;
+        }
+        const fileUrl = `/uploads/${req.file.filename}`;  // Fixed template string syntax
+        const base = process.env.DOMAIN_BASE + "/";
+        console.log("fileUrl:", { url: base + req.file?.path });
+        res.status(200).send({ url: base + req.file?.path })
+        
+    } catch (error) {
+        res.status(500).send({message:"Error uploading file"});
+    }
+}
+  
+
+
+
   async updatePost(req: Request, res: Response) {
     const id = req.params.id;
     const body = req.body;

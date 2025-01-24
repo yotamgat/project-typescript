@@ -1,5 +1,6 @@
 import {Schema,model} from "mongoose";
 
+
 const PostSchema = new Schema({
   title: {
     type: String,
@@ -9,9 +10,26 @@ const PostSchema = new Schema({
     type: String,
     required: true,
   },
+  photo: { 
+    type: String,
+    default:'/default.jpeg', 
+    
+  },
+  userImg:{
+    type: String,
+    required :true
+  },
+  username:{
+    type: String,
+    required :true
+  },
   owner: {
     type: Schema.Types.ObjectId,
     required: true,
+  },
+  createdAt: {
+     type: Date,
+    default: Date.now
   },
 })
 

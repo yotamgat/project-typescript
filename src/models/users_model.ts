@@ -9,6 +9,7 @@ interface IUser  {
   refreshTokens: string[];
   _id?: string;
   username: string;
+  image: string;
 }
 
 const userSchema = new Schema<IUser>({
@@ -25,7 +26,11 @@ const userSchema = new Schema<IUser>({
         type: [String],
         default: []
     },
-   
+    image:{
+        type: String,
+        default: 'http://localhost:3000/uploads/avatar.png'
+    },
+    
     username:{
         type: String,
         required: true,

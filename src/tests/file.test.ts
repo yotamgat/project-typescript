@@ -20,10 +20,10 @@ afterAll(() => {
 
 describe("File Test Suite", () => {
     test("File Upload Test", async () => {
-        const filePath = `${__dirname}/test_file.txt`;
+        const filePath = `${__dirname}/avatar2.png`;
         try {
             const response = await request(app)
-                .post("/file?file=test_file.txt").attach('file', filePath)
+                .post("/file?file=test_file.jpeg").attach('file', filePath)
             expect(response.statusCode).toEqual(200);
             let url = response.body.url;
             console.log(url);

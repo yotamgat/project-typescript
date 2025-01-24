@@ -1,6 +1,7 @@
 import express,{Request,Response,NextFunction} from "express";
 import postController from "../controllers/post_controller";
 import { authMiddleware } from "../controllers/auth_controller";
+import multerMiddleware from '../middleware/multerMiddleware';
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ router.post("/", authMiddleware ,postController.createPost.bind(postController))
 router.delete("/:id", authMiddleware ,postController.deletePost.bind(postController));
 router.put("/:id", authMiddleware, postController.updatePost.bind(postController));
 router.get('/get-all-posts/:owner', authMiddleware, postController.getPostsByOwner.bind(postController));
+router.post('/upload', authMiddleware, multerMiddleware, postController.savePhoto);
 
 
 

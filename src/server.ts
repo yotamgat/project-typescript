@@ -4,6 +4,7 @@ const app = express();
 import dotenv from "dotenv";
 dotenv.config();
 import mongoose from "mongoose";
+import cors from "cors";
 import postsRoutes from "./routes/posts_routes";
 import commentsRoutes from "./routes/comments_routes";
 import bodyParser from "body-parser";
@@ -13,6 +14,12 @@ import swaggerUI from "swagger-ui-express";
 import fileRouter from "./routes/file_routes";
 
 
+// Configure CORS
+app.use(cors({
+  origin: 'http://localhost:5173', // Replace with your frontend's origin
+  methods: 'GET,POST,PUT,DELETE',
+  allowedHeaders: 'Content-Type,Authorization',
+}));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,7 +31,7 @@ app.use((req, res, next) => {
 });
 
 const delay=async (req: Request, res: Response, next: NextFunction) => {
-  await new Promise<void>((r) => setTimeout(()=>r(), 2000));
+  await new Promise<void>((r) => setTimeout(()=>r(), 500));
   next();
 }
 
@@ -32,8 +39,12 @@ app.use("/posts", delay,postsRoutes);
 app.use("/comments",delay, commentsRoutes);
 app.use("/auth",delay, authRoutes);
 app.use("/file",fileRouter);
-app.use("/public",express.static("public"));
-app.use(express.static("front"));
+
+// Serve static files from the "public" directory
+app.use(express.static('public'));
+app.use('/uploads', express.static('uploads'));
+
+
 app.get("/about", (req, res) => {res.send("About Page");});
 
 
