@@ -6,11 +6,19 @@ const commentSchema = new Schema({
     required: true,
   },
   postId: {
-    type: Schema.Types.ObjectId,
+    type: Schema.ObjectId,
+    required: true,
+  },
+  username: {
+    type: String,
     required: true,
   },
   owner: {
-    type: Schema.Types.ObjectId,
+    type: Schema.ObjectId,
+    required: true,
+  },
+  userImg: {
+    type: String,
     required: true,
   },
 });

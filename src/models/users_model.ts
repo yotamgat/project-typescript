@@ -28,7 +28,7 @@ const userSchema = new Schema<IUser>({
     },
     image:{
         type: String,
-        default: 'http://localhost:3000/uploads/avatar.png'
+        default: 'http://localhost:3000/uploads/avatar3.png'
     },
     
     username:{

@@ -1,5 +1,7 @@
 import commentsModel from "../models/comments_model";
 import { Request, Response } from "express";
+import userModel from "../models/users_model";
+import postModel from "../models/posts_model";
 import { Types } from 'mongoose';
 
 class CommentController {
@@ -14,9 +16,10 @@ class CommentController {
   }
 
   async getAllCommentsByPostId(req: Request, res: Response) {
-    const postId = req.query.postId as string;
-    console.log(req.body)
+    console.log("Entered getAllCommentsByPostId");
+    const postId = req.params.postId as string;
     console.log("Received postId:", postId);
+    
     if (!postId) {
       res.status(400).send("PostId is required");
     }
@@ -44,39 +47,100 @@ class CommentController {
   }
 
   async deleteComment(req: Request, res: Response) {
-    const id = req.params.id;
-    try {
-      const rs = await commentsModel.findByIdAndDelete(id);
-      res.status(200).send("Comment Deleted");
-    } catch (error) {
-      res.status(400).send(error);
-    }
+      console.log("Entered deleteComment");
+      console.log("req.body", req.body);
+      console.log("req.params", req.params);
+
+      const  commentId  = req.params.id;
+      const { userId } = req.body; 
+      console.log("commentId", commentId);
+      console.log("userId", userId);
+      try {
+         const comment = await commentsModel.findById(new Types.ObjectId(commentId));
+         console.log("comment", comment);
+         //if(comment?.owner.toString() !== userId) {
+        //  res.status(400).send({ message: "you are not the owner of this comment" });
+         //   return;
+         //}
+         await commentsModel.findByIdAndDelete(new Types.ObjectId(commentId));
+         await postModel.findByIdAndUpdate(comment?.postId, { $inc: { numOfComments: -1 } });
+         res.status(200).send({ message: "comment deleted successfully" });
+         return;
+      } catch (error) {
+         res.status(400).send({ message: "internal server error" });
+      }
   }
 
   async createComment(req: Request, res: Response) {
-    const userId=req.userId;
-    const comment={...req.body,owner:userId};
-    console.log(req.body);
-    req.body=comment;
-    try {
-      const comment = await commentsModel.create(req.body);
-      res.status(201).send(comment);
-    } catch (err) {
-      res.status (400).send (err);
-    }
-    
+      console.log("Entered createComment");
+      console.log("req.body", req.body);
+      const comment = req.body.comment;
+      const postId = req.body.postId;
+      const userId = req.body.owner; 
+      console.log("comment", comment);
+      console.log("postId", postId);
+      console.log("userId", userId);
+      try {
+         const user = await userModel.findById(new Types.ObjectId(userId));
+         const  username = user?.username;
+         console.log("username", username);
+         const  userImg = user?.image;
+         console.log("img", userImg);
+         const newComment = await commentsModel.create({
+            comment,
+            postId: new Types.ObjectId(postId),
+            username,
+            owner:  new Types.ObjectId(userId),
+            userImg  
+        });
+         if (newComment) {
+          
+            await postModel.findByIdAndUpdate(new Types.ObjectId(postId), { $inc : { numOfComments: 1 } }, { new: true });
+            res.status(201).send(newComment);
+            return;
+         } else {
+          
+            res.status(400).send("problem with new comment");
+            
+         }
+      } catch (error) {
+         
+         res.status(400).send({ message: "internal server error" });
+      }
+
+
   }
+  
 
   async updateComment(req: Request, res: Response) {
-    const id = req.params.id;
-    const body = req.body;
-    try {
-      const comment = await commentsModel.findByIdAndUpdate(id, body, { new: true });
-      res.status(200).send(comment);
-    } catch (err) {
-      res.status(400).send(err);
+    console.log("Entered updateComment");
+    console.log("req.body", req.body);
+    console.log("req.params", req.params);
+    console.log("req.body.commentData", req.body.commentData);
+    const  commentId  = req.params.id;
+    const { comment, postId, userImg, username, owner } = req.body;
+      try {
+        const updatedComment = await commentsModel.findByIdAndUpdate(
+           new Types.ObjectId(commentId),
+           { comment, postId, userImg, username, owner },
+           { new: true }
+        );
+        console.log("commentId", commentId);  
+        console.log("updatedComment", updatedComment);
+     
+        if (updatedComment) {
+           res.status(200).send(updatedComment);
+          
+           return;
+        } else {
+            res.status(400).send("problem with new");
+           
+           return;
+        }
+     } catch (error) {
+        res.status(400).send({ message: "internal server error" });
+     }
     }
-  }
 }
 
 export default new CommentController();

@@ -4,6 +4,9 @@ import { OAuth2Client } from 'google-auth-library';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Types } from 'mongoose';
+import postModel from '../models/posts_model';
+import commentsModel from '../models/comments_model';
+
 
 
 // register function to create a new user with email and password 
@@ -65,6 +68,23 @@ const getUserInfo = async (req: Request, res: Response): Promise<void> => {
     }
 
 }
+const profileUpdate = async (req: Request, res: Response): Promise<void> => {
+    console.log("Entered Profile Update");
+    const {_id,userImg,username} = req.body;
+    console.log("User ID:", _id);
+    console.log("Image:", userImg);
+    console.log("Username:", username);
+    const user = await userModel.findByIdAndUpdate(new Types.ObjectId(_id), {image:userImg , username} , {new : true});
+    console.log("User:", user);
+    await postModel.updateMany({'owner': new Types.ObjectId(_id) },{userImg :userImg ,username} , {new : true});
+    await commentsModel.updateMany({'owner': new Types.ObjectId(_id) },{userImg :userImg ,username} , {new : true});
+    if(user) {
+        res.status(200).json({ message: 'Profile updated successfully', user });
+        return;
+    } else {
+        res.status(400).json({ message: 'User not found' });
+    }
+}
 
 
 const generateTokens = (_id:string):{accessToken: string, refreshToken:string} |null => {
@@ -103,23 +123,23 @@ const login = async (req: Request, res: Response) => {
         //Verify user
         const user = await userModel.findOne({ email: email }); // find the user with the email  
         if (!user) { // if user not found, send error response
-            res.status(400).send('Wrong username or password');
+            res.status(400).json('Wrong username or password');
             return;
         } 
         //Verify password
         if (typeof user.password !== 'string') {
-            res.status(400).send('Invalid password format');
+            res.status(400).json('Invalid password format');
             return;
         }
         const validPassword = await bcrypt.compare(password, user.password); // compare the password with the hashed password   
         if (!validPassword) { // if password is invalid, send error response
-            res.status(400).send('Wrong username or password');
+            res.status(400).json('Wrong username or password');
             return;
         }
         const userId:string = user._id.toString();
         const tokens = generateTokens(userId); // generate access and refresh tokens 
         if(!tokens) {
-            res.status(400).send("Missing auth configuration");
+            res.status(400).json("Missing auth configuration");
             return;
         }
 
@@ -332,6 +352,6 @@ export const authMiddleware = (req: Request, res: Response, next:NextFunction) =
 };
 
 
-export default { register, login ,logout,refresh, authMiddleware,googleLogin,getUserInfo};
+export default { register, login ,logout,refresh, authMiddleware,googleLogin,getUserInfo,profileUpdate};
 
 

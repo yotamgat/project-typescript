@@ -15,6 +15,14 @@ const PostSchema = new Schema({
     default:'/default.jpeg', 
     
   },
+  numOfLikes: {
+    type: Number,
+    default: 0,
+  },
+  numOfComments: {
+    type: Number,
+    default: 0,
+  },
   userImg:{
     type: String,
     required :true
@@ -23,8 +31,12 @@ const PostSchema = new Schema({
     type: String,
     required :true
   },
+  likedBy: {
+    type: [Schema.ObjectId],
+    
+  },
   owner: {
-    type: Schema.Types.ObjectId,
+    type: Schema.ObjectId,
     required: true,
   },
   createdAt: {

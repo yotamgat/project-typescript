@@ -11,6 +11,7 @@ router.post("/logout", authController.logout);
 router.post("/refresh", authController.refresh);
 router.post('/googlelogin', authController.googleLogin);
 router.get("/user", authMiddleware, authController.getUserInfo);
+router.post('/user/update', authMiddleware, authController.profileUpdate);
 
 
 /**

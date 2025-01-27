@@ -40,6 +40,7 @@ router.delete("/:id",authMiddleware, commentsController.deleteComment.bind(comme
  *         description: Post not found
  */
 
+
 /**
  * @swagger
  * components:
@@ -96,6 +97,10 @@ router.delete("/:id",authMiddleware, commentsController.deleteComment.bind(comme
  *               postId:
  *                type: string
  *                description: The ID of the post the comment is associated with
+ *                example: 60f3b4b3b3b3b3b3b3b3b3
+ *               userId:
+ *                type: string
+ *                description: The ID of the user who created the comment
  *                example: 60f3b4b3b3b3b3b3b3b3b3
  *     responses:
  *       201:

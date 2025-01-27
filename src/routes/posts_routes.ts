@@ -12,6 +12,8 @@ router.delete("/:id", authMiddleware ,postController.deletePost.bind(postControl
 router.put("/:id", authMiddleware, postController.updatePost.bind(postController));
 router.get('/get-all-posts/:owner', authMiddleware, postController.getPostsByOwner.bind(postController));
 router.post('/upload', authMiddleware, multerMiddleware, postController.savePhoto);
+router.put('/like/:id', authMiddleware, postController.likePost);
+router.put("/edit/:id", authMiddleware, postController.editPost.bind(postController));
 
 
 
