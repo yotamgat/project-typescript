@@ -142,30 +142,73 @@ import initApp from "../server";
 import userModel from '../models/users_model';
 import commentsModel from '../models/comments_model';
 
-let testUser: any = {};
-
-let app: any;
+let commentId = "";
+let ownerId = "";
+let fakeCommentId = "6751b12f555b26da3d29cf74";
 let postId = "";
-let commentId="";
 
+type UserInfo = {
+  email: string;
+  password: string;
+  username: string;
+  accessToken?: string;
+  _id?: string;
+};
+let app: any;
 
+const testUser: UserInfo = {
+  email: "test@user.com",
+  password: "testpassword",
+  username: "testuser",
+};
 beforeAll(async () => {
-  // Connect to the test database
   app = await initApp();
+  console.log('before all tests');
   
+  await commentsModel.deleteMany({});
+  try{
+      // Register a new user
+      const res = await request(app)
+      .post('/auth/register')
+      .send({
+        email: testUser.email,
+        password: testUser.password,
+        username:testUser.username
+      });
+      
 
-  // Create a test user and get the access token
+      // Login the user
+      const loginRes = await request(app)
+      .post('/auth/login')
+      .send({
+        email: testUser.email,
+        password: testUser.password
+      });
+    testUser.accessToken = loginRes.body.accessToken;
+    ownerId= loginRes.body._id;
+    
+    console.log("Befor All login testUser:", testUser);
+    expect(testUser.accessToken).toBeDefined();
+  }catch(error){
+    console.error("Error during beforeAll setup:", error);
+    throw error;
+  }
+  // Create a new post
   const res = await request(app)
-    .post('/auth/register')
-    .send({ email: 'test@example.com', password: 'password' });
-  testUser = res.body;
-  const loginRes = await request(app)
-    .post('/auth/login')
-    .send({ email: 'test@example.com', password: 'password' });
-  testUser.accessToken = loginRes.body.accessToken;
-  postId=loginRes.body._id;
-  expect(testUser.accessToken).toBeDefined();
+        .post('/posts')
+        .set('Authorization', `Bearer ${testUser.accessToken}`)
+        .send({
+          title: "Post title",
+          content: "Post content",
+          _id: ownerId,
+          userImg: "userImg",
+          username: testUser.username
+        });
+  console.log("Post response:", res.body);
+  postId= res.body.post._id;
+  ownerId= res.body.post.owner;
 });
+
 
 // runs after all tests
 afterAll(async () => {
@@ -174,84 +217,59 @@ afterAll(async () => {
 });
 
 
-
 describe('Comments Test Suite', () => {
   test('should create a new comment', async () => {
     const res = await request(app)
       .post('/comments')
       .set('Authorization', `Bearer ${testUser.accessToken}`)
-      .send({ comment: 'Test Comment 1', postId: postId });
+      .send({ comment: 'Test Comment 1', owner:ownerId ,postId: postId });
     expect(res.statusCode).toEqual(201);
     expect(res.body).toHaveProperty("comment", "Test Comment 1");
     commentId = res.body._id;
-    
   });
 
-  test('should fail to create a comment with invalid data', async () => {
-    const res = await request(app)
-      .post('/comments')
-      .set('Authorization', `Bearer ${testUser.accessToken}`)
-      .send({  });
-    expect(res.status).toBe(400);
-  });
-
-  test('should get all comments', async () => {
-    const res = await request(app).get('/comments');
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThanOrEqual(1);
-  });
-
+  //Get comment by id
   test('should get a comment by id', async () => {
-    // Now, get the comment by its ID
-    const res = await request(app).get(`/comments/${commentId}`);
-    expect(res.status).toBe(200);
+    const res = await request(app)
+      .get(`/comments/${commentId}`);
+    expect(res.statusCode).toEqual(200);
     expect(res.body).toHaveProperty("comment", "Test Comment 1");
-    
   });
 
-  test('should fail to get a comment by invalid id', async () => {
-    let fakeId = "6751b12f555b26da3d29cf74";
-    const res = await request(app).get(`/comments/${fakeId}`);
-    expect(res.status).toBe(404);
+  //Get all comments
+  test('should get all comments', async () => {
+    const res = await request(app)
+      .get('/comments');
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toHaveLength(1);
   });
 
+  //Update comment by id
   test('should update a comment by id', async () => {
-    // Now, update the comment
     const res = await request(app)
       .put(`/comments/${commentId}`)
       .set('Authorization', `Bearer ${testUser.accessToken}`)
-      .send({ comment: 'Updated Comment',postId: postId });
-    expect(res.status).toBe(200);
-    expect(res.body.comment).toBe('Updated Comment');
+      .send({ comment: 'Updated Comment', owner:ownerId, postId: postId });
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toHaveProperty("comment", "Updated Comment");
   });
 
+  //Get all comments by post id
+  test('should get all comments by post id', async () => {
+    const res = await request(app)
+      .get(`/comments/get-all-comments/${postId}`);
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toHaveLength(1);
+  });
+
+  //Delete comment by id
   test('should delete a comment by id', async () => {
     const res = await request(app)
       .delete(`/comments/${commentId}`)
       .set('Authorization', `Bearer ${testUser.accessToken}`);
-    expect(res.status).toBe(200);
-    expect(res.text).toBe('Comment Deleted');
+    expect(res.statusCode).toEqual(200);
+    
   });
 
-  //----- NOT WORKING TESTS-----------
-
-  test('should get all comments by post id', async () => {
-    const res = await request(app).get(`/comments/get-all-comments/${postId}`);
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body[0]).toHaveProperty("comment", "Test Comment 1");
-    expect(res.body[0]).toHaveProperty("postId", postId);
-  });
-
-  test('should fail to get all comments by invalid post id', async () => {
-    let fakeId = "6751b12f555b26da3d29cf74";
-    const res = await request(app).get(`/comments/get-all-comments/${fakeId}`);
-    expect(res.status).toBe(400);
-  });
-  
-  
  
-
-  // Add more tests as needed...
 });

@@ -123,23 +123,23 @@ const login = async (req: Request, res: Response) => {
         //Verify user
         const user = await userModel.findOne({ email: email }); // find the user with the email  
         if (!user) { // if user not found, send error response
-            res.status(400).json('Wrong username or password');
+            res.status(400).send('Wrong username or password');
             return;
         } 
         //Verify password
         if (typeof user.password !== 'string') {
-            res.status(400).json('Invalid password format');
+            res.status(400).send('Invalid password format');
             return;
         }
         const validPassword = await bcrypt.compare(password, user.password); // compare the password with the hashed password   
         if (!validPassword) { // if password is invalid, send error response
-            res.status(400).json('Wrong username or password');
+            res.status(400).send('Wrong username or password');
             return;
         }
         const userId:string = user._id.toString();
         const tokens = generateTokens(userId); // generate access and refresh tokens 
         if(!tokens) {
-            res.status(400).json("Missing auth configuration");
+            res.status(400).send("Missing auth configuration");
             return;
         }
 
@@ -156,11 +156,13 @@ const login = async (req: Request, res: Response) => {
             refreshToken: tokens.refreshToken,
             }); // send the token as response
     } catch (err) {
-        res.status(400).send(err); 
+        res.status(500).send(err); 
     }
 }; 
 const client = new OAuth2Client();
 const googleLogin = async (req: Request, res: Response):Promise<void> => {
+    console.log("Entered Google Login");
+    console.log("Request Body Google Login:", req.body);
     const { credential } = req.body;
 
     if (!credential) {
@@ -330,7 +332,7 @@ export const authMiddleware = (req: Request, res: Response, next:NextFunction) =
         return;
     }
     if(!process.env.TOKEN_SECRET) {
-        res.status(500).json({ message: "Missing authentication configuration" });
+        res.status(500).send("Missing authentication configuration" );
         return;
     }
 

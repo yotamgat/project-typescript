@@ -18,6 +18,7 @@ router.put("/edit/:id", authMiddleware, postController.editPost.bind(postControl
 
 
 
+
 /**
  * @swagger
  * tags:

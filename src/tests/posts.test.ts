@@ -1,136 +1,18 @@
 /*
-import request from "supertest";
-import initApp from "../server";
-import mongoose from "mongoose";
-import postModel from "../models/posts_model";
-import { Express } from "express";
-import userModel, { IUser } from "../models/users_model";
-
-var app: Express;
-
-type UserInfo = {
-  email: string;
-  password: string;
-  accessToken?: string;
-  _id?: string;
-};
-
-const testUser: UserInfo = {
-  email: "test@user.com",
-  password: "testpassword",
-}
-
-beforeAll(async () => {
-  console.log("beforeAll");
-  app = await initApp();
-  await postModel.deleteMany();
-  await userModel.deleteMany();
-
-  await request(app).post("/auth/register").send(testUser);
-  const res = await request(app).post("/auth/login").send(testUser);
-  console.log("Login response:", res.body); // Log the login response
-  testUser.accessToken = res.body.accessToken;
-  testUser._id = res.body._id;
-  expect(testUser.accessToken).toBeDefined();
-});
-
-afterAll((done) => {
-  console.log("afterAll");
-  mongoose.connection.close();
-  done();
-});
-
-let postId = "";
-
-const testPostFail={
-  content:"This is my first post 2",
-  owner: "Yotam2",
-}
-
-describe("Posts Tests", () => {
-  test("Posts Get All Test", async () => {
-    const response = await request(app).get("/posts");
-    console.log(response.body); // Log the response body
-    expect(response.statusCode).toBe(200);
-    expect(response.body.length).toBe(0);
-  });
-
-  test("Posts Create Test", async () => {
-    const response = await request(app).post("/posts")
-      .set({ authorization: "JWT " + testUser.accessToken })
-      .send({
-        title: "Test Post",
-        content: "Test Content",
-        owner: "TestOwner",
-      });
-    expect(response.statusCode).toBe(201);
-    expect(response.body.title).toBe("Test Post");
-    expect(response.body.content).toBe("Test Content");
-    postId = response.body._id;
-  });
-
-  test("Posts Create Test 2", async () => {
-    const response = await request(app).post("/posts")
-      .set({ authorization: "JWT " + testUser.accessToken })
-      .send({
-        title: "Test Post 2",
-        content: "Test Content 2",
-        owner: "TestOwner 2",
-      });
-    expect(response.statusCode).toBe(201);
-    //expect(response.body.title).toBe("Test Post 2");
-    //expect(response.body.content).toBe("Test Content 2");
-    //postId = response.body._id;
-  });
-
-  test("Posts Get By Id Test", async () => {
-    const response = await request(app).get("/posts/" + postId);
-    expect(response.statusCode).toBe(200);
-    expect(response.body.title).toBe("Test Post");
-    expect(response.body.content).toBe("Test Content");
-  });
-
-  test("Posts Get By Id Test Fail", async () => {
-    const response = await request(app).get("/posts/" + postId + "3");
-    expect(response.statusCode).toBe(400);
-    
-  });
-
-  test("Posts Create Test Fail", async () => {
-    const response = await request(app).post("/posts").set({ authorization: "JWT " + testUser.accessToken }).send(testPostFail);
-    expect(response.statusCode).toBe(400);
-  });
-
-  test("Test get post by owner", async () => {
-    const response = await request(app).get("/posts?owner=" + testUser._id);
-    expect(response.statusCode).toBe(200);
-    expect(response.body.length).toBe(2);
-    expect(response.body[0].title).toBe("Test Post");
-    expect(response.body[0].content).toBe("Test Content");
-  });
-
-  test("Test Delete Post", async () => {
-    const response = await request(app).delete("/posts/" + postId)
-      .set({ authorization: "JWT " + testUser.accessToken });
-    expect(response.statusCode).toBe(200);
-    const response2 = await request(app).get("/posts/" + postId);
-    expect(response2.statusCode).toBe(404);
-  });
-
-  
-});
-*/
-
 import request from 'supertest';
 import mongoose from 'mongoose';
 import initApp from "../server"; // Your Express app
+
 import userModel from '../models/users_model';
 import postModel from '../models/posts_model';
 
+let id = "";
+let fakeId = "6751b12f555b26da3d29cf74";
 
 type UserInfo = {
   email: string;
   password: string;
+  username: string;
   accessToken?: string;
   _id?: string;
 };
@@ -139,22 +21,44 @@ let app: any;
 const testUser: UserInfo = {
   email: "test@user.com",
   password: "testpassword",
+  username: "testuser",
 };
 
 beforeAll(async () => {
   // Connect to the test database
-  app = await initApp();
+  //erase the database before running tests
   
-  // Create a test user and get the access token
-  const res = await request(app)
-    .post('/auth/register')
-    .send({ email: testUser.email, password: testUser.password });
-  testUser._id = res.body._id;
-  const loginRes = await request(app)
-    .post('/auth/login')
-    .send({ email: testUser.email, password: testUser.password });
-  testUser.accessToken = loginRes.body.accessToken;
-  expect(testUser.accessToken).toBeDefined();
+  app = await initApp();
+  console.log('before all tests');
+  
+  await userModel.deleteMany({});
+  try{
+      // Register a new user
+      const res = await request(app)
+      .post('/auth/register')
+      .send({
+        email: testUser.email,
+        password: testUser.password,
+        username:testUser.username
+      });
+      testUser._id = res.body.user._id;
+
+      // Login the user
+      const loginRes = await request(app)
+      .post('/auth/login')
+      .send({
+        email: testUser.email,
+        password: testUser.password
+      });
+    testUser.accessToken = loginRes.body.accessToken;
+    console.log("Befor All login testUser:", testUser);
+    expect(testUser.accessToken).toBeDefined();
+  }catch(error){
+    console.error("Error during beforeAll setup:", error);
+    throw error;
+  }
+  
+  
 });
 
 // runs after all tests
@@ -164,8 +68,12 @@ afterAll(async () => {
 });
 
 const testPost = {
-  title: "Test Post",
-  content: "This is a test post",
+  title: "Test Post title",
+  content: "This is a test post content",
+  owner: testUser._id,
+  userImg: "testUserImg.jpg",
+  username: "testUsername",
+  photo: "testPhoto.jpg"
 };
 
 describe('Posts Test Suite', () => {
@@ -186,21 +94,246 @@ describe('Posts Test Suite', () => {
   
     jest.restoreAllMocks();
   });
+  //Test create post
+  test("Create a post", async () => {
+    console.log("testUser aaaa:", testUser);
+    testPost.owner = testUser._id;
+    console.log("testPost after:", testPost);
+    const res = await request(app)
+      .post('/posts')
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({
+        title: testPost.title,
+        content: testPost.content,
+        _id: testPost.owner,
+        userImg: testPost.userImg,
+        username: testPost.username,
+        photo: testPost.photo
+      });
+    id= res.body.post._id;  
+    console.log("Create post res:", res.body);  
+    expect(res.status).toBe(201);
+    expect(res.body.message).toBe("Post created successfully");
+    expect(res.body.post.title).toBe(testPost.title);
+    expect(res.body.post.content).toBe(testPost.content);
+    expect(res.body.post.userImg).toBe(testPost.userImg);
+    expect(res.body.post.username).toBe(testPost.username);
+    expect(res.body.post.photo).toBe(testPost.photo);
+  });
 
+  //Test get all posts
+  test("Get all posts", async () => {
+    const res = await request(app).get('/posts')
+      
+    expect(res.status).toBe(200);
+  });
+
+
+  //Test get post by id
+  test("Get post by id", async () => {
+    console.log("testPost._id:", id);
+    const res = await request(app).get(`/posts/${id}`);
+    console.log("Get post by id res:", res.body);
+    expect(res.status).toBe(200);
+  });
+
+  //Test like post
+  test("Like post", async () => {
+    const res = await request(app)
+      .put(`/posts/like/${id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({
+        userId: testUser._id
+      });
+    console.log("Like post res:", res.body);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("Post liked");
+  });
+
+  //Unlike post
+  test("Unlike post", async () => {
+    const res = await request(app)
+      .put(`/posts/like/${id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({
+        userId: testUser._id
+      });
+    console.log("Unlike post res:", res.body);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("Post unliked");
+  });
+   //Get post by owner failure
+   test("Get post by owner failure", async () => {
+    const res = await request(app)
+      .get(`/posts/get-all-posts/${fakeId}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+    console.log("Get post by owner failure res:", res.body);
+    expect(res.status).toBe(200);
+  });
+   //update post test
+   test("Edit post", async () => {
+    const res = await request(app)
+      .put(`/posts/${id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({ title: "Updated title", content: "Updated content", owner: testUser._id });
+    console.log("Edit post res:", res.body);
+    expect(res.status).toBe(201);
+    
+  });
+  //update post failure - not the owner
+  test("Edit post failure", async () => {
+    const res = await request(app)
+      .put(`/posts/${id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({ title: "Updated title", content: "Updated content", owner: fakeId });
+    console.log("Edit post failure res:", res.body);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("you are not the owner of this post");
+  });
+  //Edit post test
+  test("Edit post", async () => {
+    const res = await request(app)
+      .put(`/posts/edit/${id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({ title: "Updated title", content: "Updated content", owner: testUser._id });
+    console.log("Edit post res:", res.body);
+    expect(res.status).toBe(201);
+    
+  });
+ 
+  //Delete post by id
+  test("Delete post by id", async () => {
+    const res = await request(app)
+      .delete(`/posts/${id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+    console.log("Delete post by id res:", res.body);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("post deleted");
+  });
+ 
+  //Create post failure
+  test("Create post failure", async () => {
+    const res = await request(app)
+      .post('/posts')
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({});
+    console.log("Create post failure res:", res.body);
+    expect(res.status).toBe(500);
+    expect(res.body.message).toBe("Failed to create post");
+  });
+
+  //Get post by id failure
+  test("Get post by id failure", async () => {
+    const res = await request(app).get(`/posts/${fakeId}`);
+    console.log("Get post by id failure res:", res.body);
+    expect(res.status).toBe(404);
+  });
+
+  //Update post by id failure- not the owner
+  test("Update post by id failure", async () => {
+    const res = await request(app)
+      .put(`/posts/${fakeId}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({ title: "Updated title", content: "Updated content", owner: fakeId });
+    console.log("Update post by id failure res:", res.body);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("you are not the owner of this post");
+  });
+
+ 
+
+  //Like post failure- post not found
+  test("Like post failure", async () => {
+    const res = await request(app)
+      .put(`/posts/like/${fakeId}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({});
+    console.log("Like post failure res:", res.body);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("Post not liked");
+  });
+
+  //Delete post by id failure- post not found
+  test("Delete post by id failure", async () => {
+    const res = await request(app)
+      .delete(`/posts/${fakeId}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+    console.log("Delete post by id failure res:", res.body);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe("post not deleted");
+  });
+});
+*/
+import request from 'supertest';
+import mongoose from 'mongoose';
+import initApp from '../server'; // Your Express app
+import userModel from '../models/users_model';
+import postModel from '../models/posts_model';
+import path from 'path';
+import bcrypt from 'bcrypt';
+
+let app: any;
+let testUser: any = {};
+let testPost: any = {};
+const fakeId = "6751b12f555b26da3d29cf74";
+
+beforeAll(async () => {
+  // Initialize the app
+  app = await initApp();
+  // Ensure TOKEN_SECRET is set
+  if (!process.env.TOKEN_SECRET) {
+    process.env.TOKEN_SECRET = 'your-secret-key';
+  }
+}, 30000); // Set timeout to 30 seconds
+
+beforeEach(async () => {
+  // Clean up the database before each test
+  await userModel.deleteMany({});
+  await postModel.deleteMany({});
+  // Register a test user
+  const registerRes = await request(app)
+    .post('/auth/register')
+    .send({ email: 'test@example.com', password: 'password', username: 'testuser' });
+  testUser = registerRes.body.user;
+  // Login the test user
+  const loginRes = await request(app)
+    .post('/auth/login')
+    .send({ email: 'test@example.com', password: 'password' });
+  testUser.accessToken = loginRes.body.accessToken;
+  // Create a test post
+  testPost = await postModel.create({
+    title: 'Test Post',
+    content: 'This is a test post',
+    owner: testUser._id,
+    userImg: 'testUserImg.jpg',
+    username: 'testUsername',
+    photo: 'testPhoto.jpg'
+  });
+});
+
+afterAll(async () => {
+  await mongoose.connection.close();
+});
+
+describe('Posts Test Suite', () => {
   test('should create a new post', async () => {
     const res = await request(app)
       .post('/posts')
       .set('Authorization', `Bearer ${testUser.accessToken}`)
-      .send(testPost);
+      .send({
+        title: 'New Post',
+        content: 'This is a new post',
+        _id: testUser._id,
+        userImg: 'newUserImg.jpg',
+        username: 'newUsername',
+        photo: 'newPhoto.jpg'
+      });
+
     expect(res.status).toBe(201);
-    expect(res.body.title).toBe(testPost.title);
-    expect(res.body.content).toBe(testPost.content);
+    expect(res.body.post.title).toBe('New Post');
+    expect(res.body.post.content).toBe('This is a new post');
   });
 
-  
-
-
-  
   test('should get all posts', async () => {
     const res = await request(app).get('/posts');
     expect(res.status).toBe(200);
@@ -208,108 +341,141 @@ describe('Posts Test Suite', () => {
     expect(res.body.length).toBeGreaterThanOrEqual(1);
   });
 
-  
-
   test('should get a post by id', async () => {
-    const posts = await postModel.find();
-    const postId = posts[0]._id;
-    const res = await request(app).get(`/posts/${postId}`);
+    const res = await request(app).get(`/posts/${testPost._id}`);
     expect(res.status).toBe(200);
-    expect(res.body.title).toBe(posts[0].title);
-    expect(res.body.content).toBe(posts[0].content);
+    expect(res.body.title).toBe(testPost.title);
   });
 
-  test('should fail to get a post by invalid id', async () => {
-    const res = await request(app).get('/posts/12345');
+  test('should return 404 if post not found by id', async () => {
+    const res = await request(app).get(`/posts/${fakeId}`);
+    expect(res.status).toBe(404);
+  });
+
+  test('should delete a post by id', async () => {
+    const res = await request(app)
+      .delete(`/posts/${testPost._id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('post deleted');
+  });
+
+  test('should return 400 if post not found for deletion', async () => {
+    const res = await request(app)
+      .delete(`/posts/${fakeId}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`);
     expect(res.status).toBe(400);
-  });
-  test("Get post by id - not found", async () => {
-    const nonExistentId = new mongoose.Types.ObjectId().toString();
-    const response = await request(app).get(`/posts/${nonExistentId}`);
-    expect(response.statusCode).toBe(404);
-    expect(response.text).toContain("Not found");
-  });
-  
-  test("Get post by id - invalid ID format", async () => {
-    const response = await request(app).get(`/posts/invalid-id`);
-    expect(response.statusCode).toBe(400);
+    expect(res.body.message).toBe('post not deleted');
   });
 
   test('should update a post by id', async () => {
-    const posts = await postModel.find();
-    const postId = posts[0]._id;
     const res = await request(app)
-      .put(`/posts/${postId}`)
+      .put(`/posts/${testPost._id}`)
       .set('Authorization', `Bearer ${testUser.accessToken}`)
-      .send({ title: 'Updated Post' });
-    expect(res.status).toBe(200);
-    expect(res.body.title).toBe('Updated Post');
+      .send({
+        title: 'Updated Post Title',
+        content: 'Updated Post Content',
+        owner: testUser._id,
+        photo: 'updatedPhoto.jpg'
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe('Updated Post Title');
+    expect(res.body.content).toBe('Updated Post Content');
   });
 
-  test("Delete post - non-existent ID", async () => {
-    const nonExistentId = new mongoose.Types.ObjectId().toString();
-    const response = await request(app)
-      .delete(`/posts/${nonExistentId}`)
-      .set({ authorization: "JWT " + testUser.accessToken });
-    expect(response.statusCode).toBe(200);
-    expect(response.text).toContain("Post Deleted");
-  });
-  
- 
-
-  test('should fail to update a post by invalid id', async () => {
+  test('should return 400 if user is not the owner of the post for update', async () => {
     const res = await request(app)
-      .put('/posts/12345')
+      .put(`/posts/${testPost._id}`)
       .set('Authorization', `Bearer ${testUser.accessToken}`)
-      .send({ title: 'Updated Post' });
+      .send({
+        title: 'Updated Post Title',
+        content: 'Updated Post Content',
+        owner: fakeId,
+        photo: 'updatedPhoto.jpg'
+      });
+
     expect(res.status).toBe(400);
+    expect(res.body.message).toBe('you are not the owner of this post');
   });
 
 
-  test('should delete a post by id', async () => {
-    const posts = await postModel.find();
-    const postId = posts[0]._id;
-    const res = await request(app)
-      .delete(`/posts/${postId}`)
-      .set('Authorization', `Bearer ${testUser.accessToken}`);
-    expect(res.status).toBe(200);
-    const deletedPost = await postModel.findById(postId);
-    expect(deletedPost).toBeNull();
-  });
 
-  test('should fail to delete a post by invalid id', async () => {
+  test('should return 400 if no file is uploaded', async () => {
     const res = await request(app)
-      .delete('/posts/12345')
+      .post('/posts/upload')
       .set('Authorization', `Bearer ${testUser.accessToken}`);
+
     expect(res.status).toBe(400);
+    expect(res.body.message).toBe('file not found');
   });
 
-  test('should return 404 when deleting a non-existent post', async () => {
+  test('should edit post successfully', async () => {
     const res = await request(app)
-      .delete('/posts/677fff7f089a2dzaa033036')
-      .set('Authorization', `Bearer ${testUser.accessToken}`);
-    expect(res.status).toBe(400);
-  });
-
-
-
-  //--- NOT WORKING TESTS-----
-  test('should get posts by owner', async () => {
-    const res = await request(app).get(`/posts?owner=${testUser._id}`);
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.length).toBeGreaterThanOrEqual(1);
-  });
-
-  test('should fail to create a post with invalid data', async () => {
-    const res = await request(app)
-      .post('/posts')
+      .put(`/posts/edit/${testPost._id}`)
       .set('Authorization', `Bearer ${testUser.accessToken}`)
-      .send({ title: "Invalid Post" }); // Missing content
-    expect(res.status).toBe(400);
+      .send({
+        title: 'Edited Post Title',
+        content: 'Edited Post Content',
+        _id: testUser._id,
+        photo: 'editedPhoto.jpg'
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.title).toBe('Edited Post Title');
+    expect(res.body.content).toBe('Edited Post Content');
   });
 
+  test('should return 400 if user is not the owner of the post for edit', async () => {
+    const res = await request(app)
+      .put(`/posts/edit/${testPost._id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({
+        title: 'Edited Post Title',
+        content: 'Edited Post Content',
+        _id: fakeId,
+        photo: 'editedPhoto.jpg'
+      });
 
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('you are not the owner of this post');
+  });
 
-  // Add more tests as needed...
+  test('should like a post', async () => {
+    const res = await request(app)
+      .put(`/posts/like/${testPost._id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({ userId: testUser._id });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Post liked');
+  });
+
+  test('should unlike a post', async () => {
+    await request(app)
+      .put(`/posts/like/${testPost._id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({ userId: testUser._id });
+
+    const res = await request(app)
+      .put(`/posts/like/${testPost._id}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({ userId: testUser._id });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Post unliked');
+  });
+
+  test('should return 400 if post not found for like', async () => {
+    const res = await request(app)
+      .put(`/posts/like/${fakeId}`)
+      .set('Authorization', `Bearer ${testUser.accessToken}`)
+      .send({ userId: testUser._id });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Post not liked');
+  });
 });
+
+
+

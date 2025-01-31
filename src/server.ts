@@ -35,7 +35,7 @@ const delay=async (req: Request, res: Response, next: NextFunction) => {
   next();
 }
 
-app.use("/posts", delay,postsRoutes);
+app.use("/posts",delay,postsRoutes);
 app.use("/comments",delay, commentsRoutes);
 app.use("/auth",delay, authRoutes);
 app.use("/file",fileRouter);

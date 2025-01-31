@@ -3,41 +3,38 @@ import { Request, Response } from "express";
 import mongoose, { Error, ObjectId } from "mongoose";
 import { Types } from 'mongoose';
 import userModel from "../models/users_model";
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 import commentModel from "../models/comments_model";
 
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 class PostController{
   
     async getAllPosts(req: Request, res: Response) { 
       console.log("Entered getAllPosts");
-        const ownerFilter = req.query.owner;
+        //const ownerFilter = req.query.owner;
         try {
-            if (ownerFilter) {
-              const post = await postModel.find({ owner: ownerFilter });
-              res.send(post);
-            } else {
+       
               const post = await postModel.find();
               res.status(200).json(post);
-            }
+            
         } catch (error) {
           res.status(400).json({ message: "Failed to fetch posts", error });
         }
     };
     async getPostsByOwner(req: Request, res: Response) {
+      try {
          console.log("Entered getPostsByOwner");
-         console.log("req.body:", req.body.owner);
-         console.log("req.params:", req.params.owner);
-         console.log("req.query:", req.query.owner);
-
          const userId = req.params.owner as string;
-         console.log("getPostsByOwner userId:", userId);
-         if (!userId) {
-           res.status(400).send("userId is required");
-         }
-         try {
-           const posts = await postModel.find({ owner: userId });
-           console.log("posts:", posts);
+         console.log("req.params:", req.params.owner);
+         const posts = await postModel.find({ owner: userId });
+         if (posts) {
            res.status(200).json(posts);
+         }else{
+            res.status(400).send("Not found");
+        }
+        
          } catch (err) {
            res.status(400).send(err);
          }
@@ -45,10 +42,12 @@ class PostController{
        }
 
     async getPostById(req: Request, res: Response) {
+        console.log("Entered getPostById");
         const id = req.params.id;
+        console.log("id:", id);
         try {
             const post = await postModel.findById(id);
-            if (post != null) {
+            if (post) {
               res.send(post);
             } else {
               res.status(404).send("Not found");
@@ -90,12 +89,6 @@ class PostController{
     try {
      
       const photo = req.body.photo;
-      console.log("photo:", photo);
-      console.log("Content:", req.body.content);
-      console.log("Title:", req.body.title);
-      console.log("User Img:", req.body.userImg);
-
-
       const newPost = await postModel.create({
         title : req.body.title,
         content: req.body.content,
@@ -192,6 +185,8 @@ class PostController{
       res.status(500).send({ message: "problem with updated by id" });
   }
 }
+
+
 async editPost(req: Request, res: Response) {
   console.log("Entered editPost");
   console.log("req.body:", req.body);

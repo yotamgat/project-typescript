@@ -73,13 +73,10 @@ class CommentController {
 
   async createComment(req: Request, res: Response) {
       console.log("Entered createComment");
-      console.log("req.body", req.body);
+      console.log("req.body aa", req.body);
       const comment = req.body.comment;
       const postId = req.body.postId;
       const userId = req.body.owner; 
-      console.log("comment", comment);
-      console.log("postId", postId);
-      console.log("userId", userId);
       try {
          const user = await userModel.findById(new Types.ObjectId(userId));
          const  username = user?.username;

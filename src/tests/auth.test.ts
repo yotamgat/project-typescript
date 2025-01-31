@@ -1,392 +1,377 @@
+import request from 'supertest';
+import mongoose from 'mongoose';
+import initApp from '../server'; // Your Express app
+import userModel from '../models/users_model';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import { OAuth2Client } from 'google-auth-library';
 
-import request from "supertest"; // to test HTTP requests/responses
-import initApp from "../server"; // Link to your server file
-import mongoose from "mongoose";
-import e, { Express } from "express";
-import userModel, { IUser} from "../models/users_model";
-import postModel from "../models/posts_model";
-import jwt from "jsonwebtoken";
+const baseUrl = '/auth';
+let app: any;
 
-let app: Express;
-
-// runs before all tests
-beforeAll(async () => {
-  app = await initApp();
-  console.log("before all tests");
-  await userModel.deleteMany({}); // delete all users
-  await postModel.deleteMany({}); // delete all posts
+jest.mock('google-auth-library', () => {
+  const mOAuth2Client = {
+    verifyIdToken: jest.fn(),
+  };
+  return { OAuth2Client: jest.fn(() => mOAuth2Client) };
 });
 
-// runs after all tests
-afterAll(() => {
-  console.log("after all tests");
-  mongoose.connection.close();
-});
-
-const baseUrl = "/auth";
 
 
+describe('Auth Controller', () => {
+  let testUser: any = {};
+  const mockOAuth2Client = new OAuth2Client();
 
-type UserInfo =  {
-  email: string;
-  password: string;
-  accessToken?: string;
-  refreshToken?: string;
-  _id?: string;
-};
+  beforeAll(async () => {
+    // Initialize the app
+    app = await initApp();
+    // Ensure TOKEN_SECRET is set
+    if (!process.env.TOKEN_SECRET) {
+      process.env.TOKEN_SECRET = 'your-secret-key';
+    }
+  }, 30000); // Set timeout to 30 seconds
 
-const testUser: UserInfo = {
-  email: "test@user.com",
-  password: "testpassword",
-}
-const invalidTestUser: UserInfo = {
-  email: "invalidTest@user.com",
-  password: "1234",
-}
-//describe creates a block that groups together several related tests
-describe("Auth Test", () => {
-  test("Auth Register", async () => {
-    const response = await request(app).post(baseUrl + "/register").send(testUser);
-    expect(response.statusCode).toBe(200);
-  });
-  test("Auth Registeration Fail", async () => {
-    const response = await request(app).post(baseUrl + "/register").send(testUser);
-    expect(response.statusCode).not.toBe(200);
+  beforeEach(async () => {
+    // Clean up the database before each test
+    await userModel.deleteMany({});
+    // Create a test user
+    testUser = await userModel.create({ email: 'test@example.com', password: await bcrypt.hash('password', 10), username: 'testuser' });
   });
 
-  test("Auth test login", async () => {
-    const response = await request(app).post(baseUrl + "/login").send(testUser);
-    expect(response.statusCode).toBe(200);
-    const accessToken = response.body.accessToken;
-    const refreshToken = response.body.refreshToken;
-    const userId = response.body._id;
-    expect(accessToken).toBeDefined();
-    expect(refreshToken).toBeDefined();
-    expect(userId).toBeDefined();
-    testUser.accessToken = accessToken;
-    testUser.refreshToken= refreshToken;
-    testUser._id = userId;
+  afterAll(async () => {
+    await mongoose.connection.close();
   });
-
-  test("Login fails when TOKEN_SECRET is missing", async () => {
-    const originalSecret = process.env.TOKEN_SECRET;
-    delete process.env.TOKEN_SECRET;
+  describe('Google Login', () => {
+    test('should login successfully with Google', async () => {
+      const mockPayload = {
+        email: 'googleuser@example.com',
+        name: 'Google User',
+      };
   
-    const response = await request(app).post("/auth/login").send(testUser);
-    expect(response.statusCode).toBe(400);
-    expect(response.text).toContain("Missing auth configuration");
-  
-    process.env.TOKEN_SECRET = originalSecret;
-  });
-
-  test("Refresh fails when user is not found", async () => {
-    const invalidToken = jwt.sign({ _id: "invalidUserId" }, process.env.TOKEN_SECRET as string);
-  
-    const response = await request(app).post("/auth/refresh").send({
-      refreshToken: invalidToken,
-    });
-  
-    expect(response.statusCode).toBe(400);
-    expect(response.text).toContain("Invalid Token");
-  });
-
-  test("Refresh fails when TOKEN_SECRET is missing", async () => {
-    const originalSecret = process.env.TOKEN_SECRET;
-    delete process.env.TOKEN_SECRET;
-  
-    const response = await request(app).post("/auth/refresh").send({
-      refreshToken: testUser.refreshToken,
-    });
-    expect(response.statusCode).toBe(400);
-    expect(response.text).toContain("Missing auth configuration");
-  
-    process.env.TOKEN_SECRET = originalSecret;
-  });
-
-  test("Refresh fails when refresh token is invalid", async () => {
-    const response = await request(app).post("/auth/refresh").send({
-      refreshToken: "invalid  token", // invalid token  
-    });
-    expect(response.statusCode).toBe(403);
-    expect(response.text).toContain("Invalid Refresh Token");
-  } );
-
-  test("Refresh fails when refresh token is missing", async () => {
-    const response = await request(app).post("/auth/refresh").send({});
-    expect(response.statusCode).toBe(400);
-    expect(response.text).toContain("Invalid Token");
-  });
-
-  test("Make sure two access tokens are not the same", async () => {
-    const response = await request(app).post(baseUrl + "/login").send({
-      email: testUser.email,
-      password: testUser.password,
-    });
-    expect(response.body.accessToken).not.toEqual(testUser.accessToken);
-  });
-
-  test("Get Protected API", async () => {
-    const response = await request(app).post("/posts").send({
-      title: "Test Post",
-      content: "Test Content",
-      owner: "sdfSd",
-    });
-    expect(response.statusCode).not.toBe(201);
-    const response2 = await request(app)
-      .post("/posts")
-      .set({ authorization: "JWT " + testUser.accessToken })
-      .send({
-        title: "Test Post",
-        content: "Test Content",
-        owner: "sdfSd",
+      (mockOAuth2Client.verifyIdToken as jest.Mock).mockResolvedValueOnce({
+        getPayload: () => mockPayload,
       });
-    expect(response2.statusCode).toBe(201);
-  });
-
-  test("Get Protected API Invalid Token", async () => {
-    const response = await request(app).post("/posts").send({
-      title: "Test Post",
-      content: "Test Content",
-      owner: "sdfSd",
-    });
-    expect(response.statusCode).not.toBe(201);
-    const response2 = await request(app)
-      .post("/posts")
-      .set({ authorization: "JWT " + testUser.accessToken +'1' })
-      .send({
-        title: testUser._id,
-        content: "Test Content",
-        owner: "sdfSd",
-      });
-    expect(response2.statusCode).not.toBe(201);
-  });
-
- 
-
-  test("Refresh Token", async () => {
-    const response = await request(app).post(baseUrl + "/refresh").send({
-      refreshToken: testUser.refreshToken,
-    });
-    expect(response.statusCode).toBe(200);
-    expect(response.body.accessToken).toBeDefined();
-    expect(response.body.refreshToken).toBeDefined();
-    testUser.accessToken = response.body.accessToken;
-    testUser.refreshToken = response.body.refreshToken;
-
-  });
-
-  test("Logout - Invalidate Refresh Token", async () => {
-    const response = await request(app).post(baseUrl + "/logout").send({
-      refreshToken: testUser.refreshToken,
-    });
-    expect(response.statusCode).toBe(200);
-    const response2 = await request(app).post(baseUrl + "/refresh").send({
-      refreshToken: testUser.refreshToken,
-    });
-    expect(response2.statusCode).not.toBe(200);
-  }); 
-
-  test("Refresh Toekn Multiple Usage", async () => { 
-    // login- get a refresh token
-    const response = await request(app).post(baseUrl + "/login").send({
-      email: testUser.email,
-      password: testUser.password,
-      
-    });
-    expect(response.statusCode).toBe(200);
-    expect(response.body.accessToken).toBeDefined();
-    expect(response.body.refreshToken).toBeDefined();
-    testUser.accessToken = response.body.accessToken;
-    testUser.refreshToken = response.body.refreshToken;
-
-
-    //first time use the refresh token and get a new refresh token
-    const response2 = await request(app).post(baseUrl + "/refresh").send({
-      refreshToken: testUser.refreshToken,
-    });
-    expect(response2.statusCode).toBe(200);
-    const newRefreshToken = response2.body.refreshToken;
-
-    //second time use the old refresh token and expect to fail
-    const response3 = await request(app).post(baseUrl + "/refresh").send({
-      refreshToken: testUser.refreshToken,
-    });
-    expect(response3.statusCode).not.toBe(200);
-
-    //try to use the new refresh token and expect to fail
-    const response4 = await request(app).post(baseUrl + "/refresh").send({
-      refreshToken: newRefreshToken,
-    });
-    expect(response4.statusCode).not.toBe(200);
-  });
-
-  jest.setTimeout(10000);
-  test("Timout on access token", async () => {
-    const response = await request(app).post(baseUrl + "/login").send({
-      email: testUser.email,
-      password: testUser.password,
-      
-    });
-    expect(response.statusCode).toBe(200);
-    expect(response.body.accessToken).toBeDefined();
-    expect(response.body.refreshToken).toBeDefined();
-    testUser.accessToken = response.body.accessToken;
-    testUser.refreshToken = response.body.refreshToken;  
-
-    //wait for 6 seconds
-    await new Promise((resolve) => setTimeout(resolve, 6000));
-
-    //try to access with expired token
-    const response2 = await request(app).post("/posts").set
-    ({ authorization: "JWT " + testUser.accessToken }).send({
-      title: "Test Post",
-      content: "Test Content",
-      owner: "sdfSd",
-    });
-    expect(response2.statusCode).not.toBe(201);
-
-    const response3 = await request(app).post(baseUrl + "/refresh").send({
-      refreshToken: testUser.refreshToken,
-    });
-    expect(response3.statusCode).toBe(200);
-    testUser.accessToken = response3.body.accessToken;
-    testUser.refreshToken = response3.body.refreshToken;  
-
-    const response4 = await request(app).post("/posts").set
-    ({ authorization: "JWT " + testUser.accessToken }).send({
-      title: "Test Post",
-      content: "Test Content",
-      owner: "sdfSd",
-    });
-    expect(response4.statusCode).toBe(201);
-  });
-
-  //---------New Login Tests--------------
   
-  test("Login with missing email", async () => {
-    const response = await request(app).post("/auth/login").send({ password: "testpassword" });
-    expect(response.statusCode).toBe(400);
+      const res = await request(app)
+        .post(`${baseUrl}/googlelogin`)
+        .send({ credential: 'valid-google-token' });
+  
+      expect(res.status).toBe(200);
+      expect(res.body.email).toBe(mockPayload.email);
+      expect(res.body.username).toBe(mockPayload.name);
+      expect(res.body.accessToken).toBeDefined();
+      expect(res.body.refreshToken).toBeDefined();
+    });
+  
+    test('should return 400 if Google credential is missing', async () => {
+      const res = await request(app).post(`${baseUrl}/googlelogin`).send({});
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Missing Google credential');
+    });
+  
+    test('should return 400 if Google token is invalid', async () => {
+      (mockOAuth2Client.verifyIdToken as jest.Mock).mockRejectedValueOnce(new Error('Invalid Google token'));
+  
+      const res = await request(app)
+        .post(`${baseUrl}/googlelogin`)
+        .send({ credential: 'invalid-google-token' });
+  
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Google login failed');
+    });
   });
 
-  test('should not get posts without token', async () => {
-    const res = await request(app)
-        .post('/posts');
-    expect(res.statusCode).toEqual(401);
-    expect(res.text).toContain('Missing Token');
+  describe('Register', () => {
+    test('should return 400 if email or password is missing', async () => {
+      const res = await request(app).post(`${baseUrl}/register`).send({});
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Missing email or password');
+    });
+
+    test('should register a new user', async () => {
+      const res = await request(app)
+        .post(`${baseUrl}/register`)
+        .send({ email: 'newuser@example.com', password: 'password', username: 'newuser' });
+      expect(res.status).toBe(200);
+      expect(res.body.user.email).toBe('newuser@example.com');
+    });
+
+    test('should handle errors during registration', async () => {
+      jest.spyOn(userModel, 'create').mockImplementationOnce(() => {
+        throw new Error('Database error');
+      });
+      const res = await request(app)
+        .post(`${baseUrl}/register`)
+        .send({ email: 'erroruser@example.com', password: 'password', username: 'erroruser' });
+      expect(res.status).toBe(500);
+    });
+  });
+
+  describe('Login', () => {
+    test('should login successfully', async () => {
+      const res = await request(app)
+        .post(`${baseUrl}/login`)
+        .send({ email: 'test@example.com', password: 'password' });
+      expect(res.status).toBe(200);
+      expect(res.body.email).toBe('test@example.com');
+      expect(res.body.accessToken).toBeDefined();
+      testUser.accessToken = res.body.accessToken;
+      testUser.refreshToken = res.body.refreshToken;
+    });
+    test('should return 400 if email or password is missing', async () => {
+      const res = await request(app).post(`${baseUrl}/login`).send({});
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Wrong username or password');
+    });
+
+    test('should return 400 if user is not found', async () => {
+      const res = await request(app)
+        .post(`${baseUrl}/login`)
+        .send({ email: 'nonexistent@example.com', password: 'password' });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Wrong username or password');
+    });
+
+    test('should return 400 if password format is invalid', async () => {
+      const user = await userModel.create({ email: 'invalidpassword@example.com', password: 12345, username: 'invaliduser' });
+      const res = await request(app)
+        .post(`${baseUrl}/login`)
+        .send({ email: 'invalidpassword@example.com', password: 'password' });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Wrong username or password');
+    });
+
+    test('should return 400 if password is invalid', async () => {
+      const user = await userModel.create({ email: 'wrongpassword@example.com', password: await bcrypt.hash('password', 10), username: 'wronguser' });
+      const res = await request(app)
+        .post(`${baseUrl}/login`)
+        .send({ email: 'wrongpassword@example.com', password: 'wrongpassword' });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Wrong username or password');
+    });
+
     
+
+    test('should handle errors during login', async () => {
+      jest.spyOn(userModel, 'findOne').mockImplementationOnce(() => {
+        throw new Error('Database error');
+      });
+      const res = await request(app)
+        .post(`${baseUrl}/login`)
+        .send({ email: 'test@example.com', password: 'password' });
+      expect(res.status).toBe(500);
+    });
   });
 
-  test("Login with missing password", async () => {
-    const response = await request(app).post("/auth/login").send({ email: "test@user.com" });
-    expect(response.statusCode).toBe(400);
+  describe('Logout', () => {
+    test('should logout successfully', async () => {
+      await userModel.deleteOne({ email: 'test@example.com' });
+      const user = await userModel.create({ email: 'test@example.com', password: 'hashedpassword', username: 'testuser', refreshTokens: ['validToken'] });
+      const refreshToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET as string);
+      user.refreshTokens.push(refreshToken);
+      await user.save();
+      const res = await request(app).post(`${baseUrl}/logout`).send({ refreshToken });
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Logged out successfully.');
+    });
+    
+    test('should return 400 if refresh token is missing', async () => {
+      const res = await request(app).post(`${baseUrl}/logout`).send({});
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Missing Refresh Token');
+    });
+
+    test('should return 400 if auth configuration is missing', async () => {
+      const originalTokenSecret = process.env.TOKEN_SECRET;
+      delete process.env.TOKEN_SECRET;
+      const res = await request(app).post(`${baseUrl}/logout`).send({ refreshToken: 'someToken' });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Missing auth configuration');
+      process.env.TOKEN_SECRET = originalTokenSecret;
+    });
+
+    test('should return 403 if refresh token is invalid', async () => {
+      const res = await request(app).post(`${baseUrl}/logout`).send({ refreshToken: 'invalidToken' });
+      expect(res.status).toBe(403);
+      expect(res.text).toBe('Invalid Refresh Token');
+    });
+
+    test('should return 400 if user is not found', async () => {
+      const refreshToken = jwt.sign({ _id: 'nonexistentUserId' }, process.env.TOKEN_SECRET as string);
+      const res = await request(app).post(`${baseUrl}/logout`).send({ refreshToken });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Invalid Token');
+    });
+
+    test('should return 400 if refresh token is not found in user', async () => {
+      await userModel.deleteOne({ email: 'test@example.com' });
+      const user = await userModel.create({ email: 'test@example.com', password: 'hashedpassword', username: 'testuser' });
+      const refreshToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET as string);
+      const res = await request(app).post(`${baseUrl}/logout`).send({ refreshToken });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Invalid Token');
+    });
+
+    
+
+    test('should handle errors during logout', async () => {
+      jest.spyOn(userModel, 'findById').mockImplementationOnce(() => {
+        throw new Error('Database error');
+      });
+      const refreshToken = jwt.sign({ _id: 'someUserId' }, process.env.TOKEN_SECRET as string);
+      const res = await request(app).post(`${baseUrl}/logout`).send({ refreshToken });
+      expect(res.status).toBe(400);
+
+    });
   });
 
-  test("Login with invalid email", async () => {
-    const response = await request(app).post("/auth/login").send({ email: "invalid@user.com", password: "testpassword" });
-    expect(response.statusCode).toBe(400);
+  describe('Refresh', () => {
+    test('should return 400 if refresh token is missing', async () => {
+      const res = await request(app).post(`${baseUrl}/refresh`).send({});
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Invalid Token');
+    });
+
+    test('should return 400 if auth configuration is missing', async () => {
+      const originalTokenSecret = process.env.TOKEN_SECRET;
+      delete process.env.TOKEN_SECRET;
+      const res = await request(app).post(`${baseUrl}/refresh`).send({ refreshToken: 'someToken' });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Missing auth configuration');
+      process.env.TOKEN_SECRET = originalTokenSecret;
+    });
+
+    test('should return 403 if refresh token is invalid', async () => {
+      const res = await request(app).post(`${baseUrl}/refresh`).send({ refreshToken: 'invalidToken' });
+      expect(res.status).toBe(403);
+      expect(res.text).toBe('Invalid Refresh Token');
+    });
+
+    test('should return 400 if user is not found', async () => {
+      const refreshToken = jwt.sign({ _id: 'nonexistentUserId' }, process.env.TOKEN_SECRET as string);
+      const res = await request(app).post(`${baseUrl}/refresh`).send({ refreshToken });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Invalid Token');
+    });
+
+    test('should return 400 if refresh token is not found in user', async () => {
+      await userModel.deleteOne({ email: 'test@example.com' });
+      const user = await userModel.create({ email: 'test@example.com', password: 'hashedpassword', username: 'testuser' });
+      const refreshToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET as string);
+      const res = await request(app).post(`${baseUrl}/refresh`).send({ refreshToken });
+      expect(res.status).toBe(400);
+      expect(res.text).toBe('Invalid Token');
+    });
+
+    test('should refresh tokens successfully', async () => {
+      await userModel.deleteOne({ email: 'test@example.com' });
+      const user = await userModel.create({ email: 'test@example.com', password: 'hashedpassword', username: 'testuser', refreshTokens: ['validToken'] });
+      const refreshToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET as string);
+      user.refreshTokens.push(refreshToken);
+      await user.save();
+      const res = await request(app).post(`${baseUrl}/refresh`).send({ refreshToken });
+      expect(res.status).toBe(200);
+      expect(res.body.accessToken).toBeDefined();
+      expect(res.body.refreshToken).toBeDefined();
+    });
+
+    test('should handle errors during token refresh', async () => {
+      jest.spyOn(userModel, 'findById').mockImplementationOnce(() => {
+        throw new Error('Database error');
+      });
+      const refreshToken = jwt.sign({ _id: 'someUserId' }, process.env.TOKEN_SECRET as string);
+      const res = await request(app).post(`${baseUrl}/refresh`).send({ refreshToken });
+      expect(res.status).toBe(400);
+    });
   });
 
-  test("Login with invalid password", async () => {
-    const response = await request(app).post("/auth/login").send({ email: "test@user.com", password: "invalidpassword" });
-    expect(response.statusCode).toBe(400);
+  describe('Auth Middleware', () => {
+    test('should return 401 if token is missing', async () => {
+      const res = await request(app).get('/auth/user');
+      expect(res.status).toBe(401);
+      expect(res.text).toBe('Missing Token');
+    });
+
+    test('should return 500 if auth configuration is missing', async () => {
+      const originalTokenSecret = process.env.TOKEN_SECRET;
+      delete process.env.TOKEN_SECRET;
+      const res = await request(app).get('/auth/user').set('Authorization', 'Bearer someToken');
+      expect(res.status).toBe(500);
+      expect(res.text).toBe('Missing authentication configuration');
+      process.env.TOKEN_SECRET = originalTokenSecret;
+    });
+
+    test('should return 403 if token is invalid', async () => {
+      const res = await request(app).get('/auth/user').set('Authorization', 'Bearer invalidToken');
+      expect(res.status).toBe(403);
+      expect(res.text).toBe('Invalid Token');
+    });
+
+    test('should allow access with valid token', async () => {
+      const token = jwt.sign({ _id: testUser._id }, process.env.TOKEN_SECRET as string);
+      const res = await request(app).get('/auth/user').set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+    });
   });
 
-  test("Login with valid email and password", async () => {
-    const response = await request(app).post("/auth/login").send(testUser);
-    expect(response.statusCode).toBe(200);
-    expect(response.body.accessToken).toBeDefined();
-    testUser.accessToken = response.body.accessToken;
-    testUser.refreshToken = response.body.refreshToken;
+  describe('User Info', () => {
+    test('should get user info', async () => {
+      const token = jwt.sign({ _id: testUser._id }, process.env.TOKEN_SECRET as string);
+      const res = await request(app).get(`${baseUrl}/user`).set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.userId).toBe(testUser._id.toString());
+    });
+
+    test('should return 401 if token is missing for user info', async () => {
+      const res = await request(app).get(`${baseUrl}/user`);
+      expect(res.status).toBe(401);
+      expect(res.text).toBe('Missing Token');
+    });
+
+    test('should return 403 if token is invalid for user info', async () => {
+      const res = await request(app).get(`${baseUrl}/user`).set('Authorization', 'Bearer invalidToken');
+      expect(res.status).toBe(403);
+      expect(res.text).toBe('Invalid Token');
+    });
   });
 
-  //---------New Logout Tests--------------
+  describe('Profile Update', () => {
+    test('should update user profile', async () => {
+      const token = jwt.sign({ _id: testUser._id }, process.env.TOKEN_SECRET as string);
+      const res = await request(app)
+        .post(`${baseUrl}/user/update`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          _id: testUser._id,
+          userImg: 'newimage.jpg',
+          username: 'updateduser'
+        });
+      expect(res.status).toBe(200);
+      expect(res.body.user.username).toBe('updateduser');
+    });
 
-  
-  test("Logout with missing refresh token", async () => {
-    const response = await request(app).post("/auth/logout").send({});
-    expect(response.statusCode).toBe(400);
+    test('should not update user profile without token', async () => {
+      const res = await request(app)
+        .post(`${baseUrl}/user/update`)
+        .send({
+          _id: testUser._id,
+          userImg: 'newimage.jpg',
+          username: 'updateduser'
+        });
+      expect(res.status).toBe(401);
+    });
+
+    test('should return 403 if token is invalid for profile update', async () => {
+      const res = await request(app)
+        .post(`${baseUrl}/user/update`)
+        .set('Authorization', 'Bearer invalidToken')
+        .send({
+          _id: testUser._id,
+          userImg: 'newimage.jpg',
+          username: 'updateduser'
+        });
+      expect(res.status).toBe(403);
+      expect(res.text).toBe('Invalid Token');
+    });
   });
-
-  test("Logout with invalid refresh token", async () => {
-    const response = await request(app).post("/auth/logout").send({ refreshToken: "invalidtoken" });
-    expect(response.statusCode).toBe(403);
-  });
-
-  test("Logout with valid refresh token", async () => {
-    const response = await request(app).post("/auth/logout").send({ refreshToken: testUser.refreshToken });
-    expect(response.statusCode).toBe(200);
-  });
-  //---------New Register Tests--------------
-  test("Register with missing email", async () => {
-    const response = await request(app).post("/auth/register").send({ password: "testpassword" });
-    expect(response.statusCode).toBe(400);
-  });
-
-  test("Register with missing password", async () => {
-    const response = await request(app).post("/auth/register").send({ email: "test@user.com" });
-    expect(response.statusCode).toBe(400);
-  });
-  test("Register with missing email and password", async () => {
-    const response = await request(app).post("/auth/register").send({});
-    expect(response.statusCode).toBe(400);
-  });
-  
-
-  test("Register with valid email and password", async () => {
-    const response = await request(app).post("/auth/register").send(testUser);
-    expect(response.statusCode).not.toBe(200);
-  });
-
-  //---------New Refresh Tokens Tests--------------
-  test("Refresh with missing refresh token", async () => {
-    const response = await request(app).post("/auth/refresh").send({});
-    expect(response.statusCode).toBe(400);
-  });
-
-  test("Refresh with invalid refresh token", async () => {
-    const response = await request(app).post("/auth/refresh").send({ refreshToken: "invalidtoken" });
-    expect(response.statusCode).toBe(403);
-  });
-
-  test("Refresh with valid refresh token", async () => {
-    const loginResponse = await request(app).post("/auth/login").send(testUser);
-    const response = await request(app).post("/auth/refresh").send({ refreshToken: loginResponse.body.refreshToken });
-    expect(response.statusCode).toBe(200);
-    expect(response.body.accessToken).toBeDefined();
-  });
-
-  
-
-test("Login with missing TOKEN_SECRET", async () => {
-    const originalSecret = process.env.TOKEN_SECRET;
-    delete process.env.TOKEN_SECRET;
-
-    const response = await request(app).post("/auth/login").send(testUser);
-    expect(response.statusCode).toBe(400);
-    expect(response.text).toContain("Missing auth configuration");
-
-    process.env.TOKEN_SECRET = originalSecret; // Restore secret
 });
-
-test("Refresh with missing refresh token", async () => {
-  const response = await request(app).post("/auth/refresh").send({});
-  expect(response.statusCode).toBe(400);
-  expect(response.text).toContain("Invalid Token");
-  
-});
-
-
-
-test("Refresh with invalid refresh token", async () => {
-  const response = await request(app).post("/auth/refresh").send({
-      refreshToken: "invalidtoken",
-  });
-  expect(response.statusCode).toBe(403);
-  expect(response.text).toContain("Invalid Refresh Token");
-});
-
-
-
-});
-
-
